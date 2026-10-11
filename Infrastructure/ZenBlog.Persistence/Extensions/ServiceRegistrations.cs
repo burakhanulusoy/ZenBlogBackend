@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ZenBlog.Application.Contracts.Persistence;
+using ZenBlog.Persistence.Concrete;
 using ZenBlog.Persistence.Context;
 using ZenBlog.Persistence.Interceptors;
 
@@ -19,6 +21,10 @@ namespace ZenBlog.Persistence.Extensions
                 options.AddInterceptors(new AddDbContextInterceptor());
             });
 
+            //SCOPED
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped(typeof(IRepository<>),typeof(GenericRepository<>));
 
 
 
