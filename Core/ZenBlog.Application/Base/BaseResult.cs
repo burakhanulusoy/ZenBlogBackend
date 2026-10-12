@@ -35,7 +35,7 @@ public class BaseResult<T>
                       select new Error
                       {
                           ErrorMessage = error.ErrorMessage,
-                          ProportyName = error.PropertyName
+                          PropertyName = error.PropertyName
                       }).ToList();
 
         return new BaseResult<T>
@@ -54,7 +54,7 @@ public class BaseResult<T>
                       select new Error
                       {
                           ErrorMessage = error.Description,
-                          ProportyName = error.Code
+                          PropertyName = error.Code
                       }).ToList();
 
         return new BaseResult<T>
@@ -72,7 +72,7 @@ public class BaseResult<T>
                 new Error
                 {
                     ErrorMessage=message,
-                    ProportyName=string.Empty
+                    PropertyName=string.Empty
                 }
             }
 
@@ -91,7 +91,7 @@ public class BaseResult<T>
 public class Error
 {
 
-    public string ProportyName { get; set; } = string.Empty;
+    public string PropertyName { get; set; } = string.Empty;
     public string ErrorMessage { get; set; } = string.Empty;
 
 
