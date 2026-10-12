@@ -27,6 +27,18 @@ namespace ZenBlog.Persistence.Concrete
             return await _table.AsNoTracking().ToListAsync();  //ChangeTracking mekanizmasý durssun
         }
 
+        public async Task<List<TEntity>> GetAllAsync(params Expression<Func<TEntity, object>>[] includes)
+        {
+            IQueryable<TEntity> query = _table.AsNoTracking();
+
+            foreach (var include in includes)
+                query = query.Include(include);
+
+            return await query.ToListAsync();
+
+            //var blogs = await _repository.GetAllAsync(x => x.Category, x => x.AppUser); kullanýmý
+        }
+
         public async Task<TEntity> GetByIdAsync(Guid id)
         {
             return await _table.FindAsync(id);

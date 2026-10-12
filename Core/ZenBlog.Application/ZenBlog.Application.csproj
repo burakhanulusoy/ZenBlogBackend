@@ -19,4 +19,10 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.20" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Queries\UserQueries\" />
+    <Folder Include="Features\Results\UserResults\" />
+    <Folder Include="Mappings\UserMappings\" />
+  </ItemGroup>
+
 </Project>

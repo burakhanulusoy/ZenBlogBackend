@@ -8,6 +8,6 @@ namespace ZenBlog.Domain.Entities
         public string Surname { get; set; }
         public string Descriptiron { get; set; }
         public string Image { get; set; }
-        public IList<TeamSocialMedia> TeamSocialMedias { get; set; }
+        public virtual IList<TeamSocialMedia> TeamSocialMedias { get; set; }
     }
 }

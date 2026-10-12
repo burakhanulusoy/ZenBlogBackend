@@ -19,8 +19,14 @@ public class Blog:BaseEntity
     public string Title3 { get; set; }
     public string Description4 { get; set; }
 
-    public Category Category { get; set; }
+    public virtual Category Category { get; set; }
     public Guid CategoryId { get; set; }
 
+
+    public virtual AppUser AppUser { get; set; }
+    public Guid AppUserId { get; set; }
+
+
+    public virtual IList<Comment> Comments { get; set; }
 
 }

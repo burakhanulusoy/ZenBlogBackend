@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using ZenBlog.Domain.Entities;
@@ -5,7 +6,7 @@ using ZenBlog.Domain.Entities.Common;
 
 namespace ZenBlog.Persistence.Context
 {
-    public class AppDbContext(DbContextOptions options):DbContext(options)
+    public class AppDbContext(DbContextOptions options):IdentityDbContext<AppUser,AppRole,Guid>(options)
     {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -56,6 +57,8 @@ namespace ZenBlog.Persistence.Context
         public DbSet<SocialMedia>  SocialMedias { get; set; }
         public DbSet<Team>  Teams { get; set; }
         public DbSet<TeamSocialMedia>  TeamSocialMedias { get; set; }
+        public DbSet<SubComment>  SubComments { get; set; }
+        public DbSet<Comment>  Comments { get; set; }
 
 
 

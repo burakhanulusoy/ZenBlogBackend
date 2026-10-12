@@ -13,4 +13,8 @@ public interface IRepository<TEntity> where TEntity : BaseEntity
     void Delete(TEntity entity);
     Task<TEntity> GetSingle(Expression<Func<TEntity, bool>> filter);
 
+    Task<List<TEntity>> GetAllAsync(params Expression<Func<TEntity, object>>[] includes);
+
+
+
 }

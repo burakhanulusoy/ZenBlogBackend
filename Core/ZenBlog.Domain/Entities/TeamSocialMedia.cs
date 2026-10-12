@@ -7,7 +7,7 @@ namespace ZenBlog.Domain.Entities
         public string SocialMediaName { get; set; }
         public string Icon { get; set; }
         public string Url { get; set; }
-        public Team Team { get; set; }
+        public virtual Team Team { get; set; }
         public Guid TeamId { get; set; }
 
     }
