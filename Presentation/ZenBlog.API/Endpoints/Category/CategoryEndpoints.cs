@@ -27,6 +27,27 @@ public static class CategoryEndpoints
         });
 
 
+        categories.MapGet("{id}", async (Guid id, IMediator mediator) =>
+        {
+            var response = await mediator.Send(new GetCategoryByIdQuery(id));
+            return response.IsSuccessful ? Results.Ok(response) :  Results.BadRequest(response);
+        });
+
+        categories.MapPut(string.Empty, async (IMediator mediator, UpdateCategoryCommand command) =>
+        {
+            var response = await mediator.Send(command);
+            return response.IsSuccessful ? Results.Ok() :Results.BadRequest(response);
+        });
+
+        categories.MapDelete("{id}", async (IMediator mediator, Guid id) =>
+        {
+            var response = await mediator.Send(new RemoveCategoryCommand(id));
+
+            return response.IsSuccessful ? Results.Ok() : Results.BadRequest(response);
+
+        });
+        
+
 
 
     }

@@ -18,15 +18,12 @@ namespace ZenBlog.Application.Features.Handlers.CategoryHandlers
 
             if (category is null)
             {
-                return BaseResult<GetCategoryByIdQueryResult>.Fail("Kategori Bulunamadý.");
+                return BaseResult<GetCategoryByIdQueryResult>.Fail("Category Not Found.");
             }
 
             var mappedCategory = _mapper.Map<GetCategoryByIdQueryResult>(category);
 
             return BaseResult<GetCategoryByIdQueryResult>.Success(mappedCategory);
-
-
-
 
         }
     }

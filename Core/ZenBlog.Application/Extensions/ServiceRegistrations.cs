@@ -16,6 +16,8 @@ namespace ZenBlog.Application.Extensions
             {
                 options.RegisterServicesFromAssemblies(typeof(ApplicationAssembly).Assembly);
 
+
+                //behavior
                 options.AddOpenBehavior(typeof(ValidationBehavior<,>));
 
 

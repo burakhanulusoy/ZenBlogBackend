@@ -18,7 +18,7 @@ namespace ZenBlog.Persistence.Extensions
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlServer(_configuration.GetConnectionString("MSSQL_Connection"));
-                options.AddInterceptors(new AddDbContextInterceptor());
+                options.AddInterceptors(new AuditDbContextInterceptor());
             });
 
             //SCOPED

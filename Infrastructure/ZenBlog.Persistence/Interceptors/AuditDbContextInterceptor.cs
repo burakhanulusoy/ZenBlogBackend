@@ -4,7 +4,7 @@ using ZenBlog.Domain.Entities.Common;
 
 namespace ZenBlog.Persistence.Interceptors
 {
-    public class AddDbContextInterceptor : SaveChangesInterceptor
+    public class AuditDbContextInterceptor : SaveChangesInterceptor
     {
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {
