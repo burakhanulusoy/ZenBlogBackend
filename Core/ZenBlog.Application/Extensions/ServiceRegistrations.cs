@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZenBlog.Application.Assembly;
 using ZenBlog.Application.Behaviors;
+using ZenBlog.Application.Services.MailServices;
 
 namespace ZenBlog.Application.Extensions
 {
@@ -31,6 +32,10 @@ namespace ZenBlog.Application.Extensions
 
             //FluentValidation
             services.AddValidatorsFromAssembly(typeof(ApplicationAssembly).Assembly);
+
+
+            services.AddScoped<IEmailConfirmationService,EmailConfirmationService>();
+
 
             return services;
         }

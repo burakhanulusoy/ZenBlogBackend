@@ -45,8 +45,14 @@ namespace ZenBlog.Persistence.Extensions
                 options.Lockout.MaxFailedAccessAttempts = 5; // 5 kez yanlýþ girerse kilitlenir.
                 options.Lockout.AllowedForNewUsers = true; // Yeni kullanýcýlar için de geçerli olsun.
 
+
+                // E-posta doðrulamada uzun token yerine 6 haneli kod üre
+                options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
+
+
             }).AddEntityFrameworkStores<AppDbContext>()
-            .AddErrorDescriber<CustomErrorDescriber>();
+            .AddErrorDescriber<CustomErrorDescriber>()
+            .AddDefaultTokenProviders();
 
 
 

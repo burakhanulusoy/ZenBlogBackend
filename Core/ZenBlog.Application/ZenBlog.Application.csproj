@@ -9,6 +9,10 @@
   <ItemGroup>
     <ProjectReference Include="..\ZenBlog.Domain\ZenBlog.Domain.csproj" />
   </ItemGroup>
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
@@ -20,9 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Commands\BlogCommands\" />
+    <Folder Include="Features\Handlers\BlogHandlers\" />
+    <Folder Include="Features\Queries\BlogQueries\" />
     <Folder Include="Features\Queries\UserQueries\" />
     <Folder Include="Features\Results\UserResults\" />
-    <Folder Include="Mappings\UserMappings\" />
+    <Folder Include="Validators\BlogValidators\" />
   </ItemGroup>
 
 </Project>

@@ -8,8 +8,8 @@ namespace ZenBlog.Application.Validators.UserValidators
         public CreateUserValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Ad boþ olamaz.")
-                .MaximumLength(50).WithMessage("Ad en fazla 50 karakter olabilir.");
+             .NotEmpty().WithMessage("Ad boþ olamaz.")
+             .MaximumLength(50).WithMessage("Ad en fazla 50 karakter olabilir.");
 
             RuleFor(x => x.Surname)
                 .NotEmpty().WithMessage("Soyad boþ olamaz.")
@@ -22,10 +22,11 @@ namespace ZenBlog.Application.Validators.UserValidators
                 .NotEmpty().WithMessage("E-posta boþ olamaz.")
                 .EmailAddress().WithMessage("Geçerli bir e-posta adresi giriniz.");
 
+            // Boþ þifre gelirse Identity düzgün hata yerine exception fýrlatýr, o yüzden burada.
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Þifre boþ olamaz.");
 
-            // Identity þifre tekrarýný kontrol ETMEZ, bu yüzden burada kalmalý.
+            // Identity'de "þifre tekrarý" kavramý yok, bu kontrol bize kalýyor.
             RuleFor(x => x.ConfirmPassword)
                 .Equal(x => x.Password).WithMessage("Þifreler eþleþmiyor.");
         }

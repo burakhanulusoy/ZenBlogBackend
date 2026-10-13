@@ -1,4 +1,5 @@
 ﻿using ZenBlog.API.Endpoints.Category;
+using ZenBlog.API.Endpoints.User;
 
 namespace ZenBlog.API.Registrations
 {
@@ -8,7 +9,7 @@ namespace ZenBlog.API.Registrations
         public static void RegisterEndpoints(this IEndpointRouteBuilder app)
         {
             app.RegisterCategoryEndpoints();
-
+            app.RegisterUserEndpoints();
 
         }
 
