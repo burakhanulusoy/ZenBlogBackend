@@ -24,12 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Features\Commands\BlogCommands\" />
-    <Folder Include="Features\Handlers\BlogHandlers\" />
-    <Folder Include="Features\Queries\BlogQueries\" />
     <Folder Include="Features\Queries\UserQueries\" />
-    <Folder Include="Features\Results\UserResults\" />
-    <Folder Include="Validators\BlogValidators\" />
   </ItemGroup>
 
 </Project>

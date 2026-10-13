@@ -1,0 +1,77 @@
+﻿using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using ZenBlog.Application.Base;
+using ZenBlog.Application.Features.Commands.BlogCommands;
+using ZenBlog.Application.Features.Queries.BlogQueries;
+using ZenBlog.Application.Features.Results.BlogResults;
+
+namespace ZenBlog.API.Endpoints.Blog
+{
+    public static class BlogEndpoints
+    {
+        public static void RegisterBlogEndpoints(this IEndpointRouteBuilder app)
+        {
+            var blogs = app.MapGroup("/blogs").WithTags("Blogs");
+
+            // GET /api/blogs → tüm bloglar
+            blogs.MapGet(string.Empty, async (IMediator mediator) =>
+            {
+                var response = await mediator.Send(new GetBlogsQuery());
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            .Produces<BaseResult<List<GetBlogsQueryResult>>>(StatusCodes.Status200OK)
+            .Produces<BaseResult<List<GetBlogsQueryResult>>>(StatusCodes.Status400BadRequest);
+
+            // GET /api/blogs/{id} → tek blog, bulunamazsa 404
+            blogs.MapGet("{id}", async (IMediator mediator, Guid id) =>
+            {
+                var response = await mediator.Send(new GetBlogByIdQuery(id));
+                return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
+            })
+            .Produces<BaseResult<GetBlogByIdQueryResult>>(StatusCodes.Status200OK)
+            .Produces<BaseResult<GetBlogByIdQueryResult>>(StatusCodes.Status404NotFound);
+
+            // POST /api/blogs → yeni blog (form-data: yazı alanları + 3 resim)
+            blogs.MapPost(string.Empty, async ([FromForm] CreateBlogCommand command, IMediator mediator) =>
+            {
+                var response = await mediator.Send(command);
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+// DisableAntiforgery:
+// .NET 8+ minimal API, form-data alan endpoint'lerde (dosya yükleme, [FromForm])
+// CSRF saldırısına karşı otomatik olarak "antiforgery token" bekler.
+// CSRF: Kullanıcı sitemize giriş yapmışken başka bir sitenin, tarayıcının
+// otomatik gönderdiği çerezi (cookie) kullanarak onun adına istek atmasıdır.
+// Bizim API'miz form sayfası üretmediği için bu token'ı kimseye vermiyor;
+// koruma açık kalırsa her istek "token yok" diye 400 ile reddedilir.
+// JWT, çerezle değil isteğin header'ına elle eklenerek gönderildiği için
+// CSRF riski zaten oluşmaz; bu yüzden JWT kullanan API'lerde kapatılması standarttır.
+.DisableAntiforgery()
+            .DisableAntiforgery()
+            .Produces(StatusCodes.Status200OK)
+            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+
+
+
+            // PUT /api/blogs → güncelleme (form-data: seçilmeyen resimler eski haliyle kalır)
+            blogs.MapPut(string.Empty, async ([FromForm] UpdateBlogCommand command, IMediator mediator) =>
+            {
+                var response = await mediator.Send(command);
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            .DisableAntiforgery()
+            .Produces(StatusCodes.Status200OK)
+            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+            // DELETE /api/blogs/{id}
+            blogs.MapDelete("{id}", async (IMediator mediator, Guid id) =>
+            {
+                var response = await mediator.Send(new RemoveBlogCommand(id));
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            .Produces(StatusCodes.Status200OK)
+            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+        }
+    }
+}

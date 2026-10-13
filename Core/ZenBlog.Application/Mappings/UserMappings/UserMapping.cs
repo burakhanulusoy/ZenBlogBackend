@@ -1,5 +1,6 @@
 using AutoMapper;
 using ZenBlog.Application.Features.Commands.UserCommands;
+using ZenBlog.Application.Features.Results.UserResults;
 using ZenBlog.Domain.Entities;
 
 namespace ZenBlog.Application.Mappings.UserMappings
@@ -8,7 +9,10 @@ namespace ZenBlog.Application.Mappings.UserMappings
     {
         public UserMapping()
         {
-            CreateMap<CreateUserCommand, AppUser>();
+            CreateMap<CreateUserCommand, AppUser>().ReverseMap();
+            CreateMap<AppUser,GetUsersQueryResult>().ReverseMap();
+
+
         }
     }
 }

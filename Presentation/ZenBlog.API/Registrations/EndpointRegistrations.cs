@@ -1,4 +1,5 @@
-﻿using ZenBlog.API.Endpoints.Category;
+﻿using ZenBlog.API.Endpoints.Blog;
+using ZenBlog.API.Endpoints.Category;
 using ZenBlog.API.Endpoints.User;
 
 namespace ZenBlog.API.Registrations
@@ -10,7 +11,7 @@ namespace ZenBlog.API.Registrations
         {
             app.RegisterCategoryEndpoints();
             app.RegisterUserEndpoints();
-
+            app.RegisterBlogEndpoints();
         }
 
 
