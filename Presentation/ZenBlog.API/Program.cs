@@ -47,6 +47,17 @@ builder.Services.AddRateLimiter(options =>
             BaseResult<object>.Fail("Çok fazla deneme yaptýnýz. Lütfen bir dakika bekleyip tekrar deneyin."),
             cancellationToken);
     };
+
+    // Ýletiþim formu: ayný IP'den 10 dakikada en fazla 3 mesaj
+    options.AddPolicy("contact-message", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(10)
+            }));
+
 });
 
 
