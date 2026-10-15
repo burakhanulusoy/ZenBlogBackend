@@ -1,6 +1,7 @@
 ﻿using ZenBlog.API.Endpoints.Blog;
 using ZenBlog.API.Endpoints.Category;
 using ZenBlog.API.Endpoints.Comment;
+using ZenBlog.API.Endpoints.SubComment;
 using ZenBlog.API.Endpoints.User;
 
 namespace ZenBlog.API.Registrations
@@ -14,6 +15,10 @@ namespace ZenBlog.API.Registrations
             app.RegisterUserEndpoints();
             app.RegisterBlogEndpoints();
             app.RegisterCommentEndpoint();
+            app.RegisterSubCommentEndpoints();
+
+
+
         }
 
 

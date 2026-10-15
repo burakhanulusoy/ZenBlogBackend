@@ -23,5 +23,8 @@ public class CommentMapping : Profile
             .ForCtorParam(nameof(GetCommentsByUserIdQueryResult.BlogMainTitle),
                           opt => opt.MapFrom(src => src.Blog.MainTitle));
 
+
+
+        CreateMap<Comment, GetCommentByIdQueryResult>();
     }
 }

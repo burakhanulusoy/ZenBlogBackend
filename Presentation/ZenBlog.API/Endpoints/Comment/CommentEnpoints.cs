@@ -58,6 +58,17 @@ namespace ZenBlog.API.Endpoints.Comment
             })
             .Produces<BaseResult<List<GetCommentsByUserIdQueryResult>>>(StatusCodes.Status200OK);
 
+
+            // GET /api/comments/{id} → tek yorum (düzenleme formu için)
+            comments.MapGet("{id:guid}", async (IMediator mediator, Guid id) =>
+            {
+                var response = await mediator.Send(new GetCommentByIdQuery(id));
+                return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
+            })
+            .Produces<BaseResult<GetCommentByIdQueryResult>>(StatusCodes.Status200OK)
+            .Produces<BaseResult<GetCommentByIdQueryResult>>(StatusCodes.Status404NotFound);
+
+
         }
 
 
