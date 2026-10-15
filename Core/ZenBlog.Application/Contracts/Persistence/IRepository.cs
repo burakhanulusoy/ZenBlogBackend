@@ -11,10 +11,12 @@ public interface IRepository<TEntity> where TEntity : BaseEntity
     Task CreateAsync(TEntity entity);
     void Update(TEntity entity);
     void Delete(TEntity entity);
-    Task<TEntity> GetSingle(Expression<Func<TEntity, bool>> filter);
 
     Task<List<TEntity>> GetAllAsync(params Expression<Func<TEntity, object>>[] includes);
 
+    Task<List<TEntity>> GetAllFilterAsync(Expression<Func<TEntity, bool>> filter);
 
+    Task<List<TEntity>> GetLatestAsync(int count);
+    Task<List<TEntity>> GetLatestAsync(Expression<Func<TEntity, bool>> filter, int count);
 
 }

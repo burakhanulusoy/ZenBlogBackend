@@ -12,16 +12,23 @@ namespace ZenBlog.Application.Features.Handlers.BlogHandlers;
 
 public class UpdateBlogCommandHandler(IRepository<Blog> _repository,
                                       IUnitOfWork _unitOfWork,
+                                      IRepository<Category> _categoryRepository,
                                       IMapper _mapper,
                                       IFileService _fileService)
     : IRequestHandler<UpdateBlogCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(UpdateBlogCommand request, CancellationToken cancellationToken)
     {
-        var blog = await _repository.GetByIdAsync(request.Id!.Value);
+        var blog = await _repository.GetByIdAsync(request.Id);
 
         if (blog is null)
             return BaseResult<object>.Fail("Bu Id'ye sahip blog bulunamadý.");
+
+        // Kategori gerçekten var mý? (resim yüklemeden önce)
+        var category = await _categoryRepository.GetByIdAsync(request.CategoryId!.Value);
+
+        if (category is null)
+            return BaseResult<object>.Fail("Seçilen kategori bulunamadý.");
 
         _mapper.Map(request, blog);
 

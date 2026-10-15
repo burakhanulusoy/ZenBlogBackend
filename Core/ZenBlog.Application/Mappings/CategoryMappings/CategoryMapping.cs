@@ -14,7 +14,7 @@ namespace ZenBlog.Application.Mappings.CategoryMappings
             CreateMap<CreateCategoryCommand, Category>().ReverseMap();
             CreateMap<UpdateCategoryCommand, Category>().ReverseMap();
 
-
+            CreateMap<Blog, CategoryBlogItemResult>().ReverseMap();
         }
     }
 }

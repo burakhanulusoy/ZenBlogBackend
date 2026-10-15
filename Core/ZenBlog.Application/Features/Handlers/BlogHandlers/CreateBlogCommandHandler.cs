@@ -11,6 +11,7 @@ using ZenBlog.Domain.Entities;
 namespace ZenBlog.Application.Features.Handlers.BlogHandlers;
 
 public class CreateBlogCommandHandler(IRepository<Blog> _repository,
+                                      IRepository<Category> _categoryRepository,
                                       IUnitOfWork _unitOfWork,
                                       IMapper _mapper,
                                       IFileService _fileService)
@@ -18,6 +19,13 @@ public class CreateBlogCommandHandler(IRepository<Blog> _repository,
 {
     public async Task<BaseResult<object>> Handle(CreateBlogCommand request, CancellationToken cancellationToken)
     {
+        // Kategori gerçekten var mý? Resim yüklemeden ÖNCE kontrol ediyoruz;
+        // yanlýþsa Azure'a hiç dosya gitmiyor.
+        var category = await _categoryRepository.GetByIdAsync(request.CategoryId!.Value);
+
+        if (category is null)
+            return BaseResult<object>.Fail("Seçilen kategori bulunamadý.");
+
         var blog = _mapper.Map<Blog>(request);
 
         // Resimleri yükle, adreslerini blog'a yaz

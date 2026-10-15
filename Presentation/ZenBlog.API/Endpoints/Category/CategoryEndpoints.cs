@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using ZenBlog.Application.Base;
 using ZenBlog.Application.Features.Commands.CategoryCommands;
 using ZenBlog.Application.Features.Queries.CategoryQueries;
+using ZenBlog.Application.Features.Results.CategoryResults;
 
 namespace ZenBlog.API.Endpoints.Category;
 
@@ -46,8 +48,13 @@ public static class CategoryEndpoints
             return response.IsSuccessful ? Results.Ok() : Results.BadRequest(response);
 
         });
-        
 
+        categories.MapGet("with-blogs", async (IMediator mediator) =>
+        {
+            var response = await mediator.Send(new GetCategoriesWithBlogsQuery());
+            return Results.Ok(response);
+        })
+        .Produces<BaseResult<List<GetCategoriesWithBlogsQueryResult>>>(StatusCodes.Status200OK);
 
 
     }

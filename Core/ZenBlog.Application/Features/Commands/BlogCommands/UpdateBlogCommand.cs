@@ -6,7 +6,7 @@ namespace ZenBlog.Application.Features.Commands.BlogCommands;
 
 public record UpdateBlogCommand : IRequest<BaseResult<object>>
 {
-    public Guid? Id { get; init; }
+    public Guid Id { get; init; }
     public string? MainTitle { get; init; }
     public IFormFile? CoverImage { get; init; }
     public IFormFile? BlogImage1 { get; init; }

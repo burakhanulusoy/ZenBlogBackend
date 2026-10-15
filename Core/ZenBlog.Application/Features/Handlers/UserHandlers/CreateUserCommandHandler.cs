@@ -22,7 +22,7 @@ public class CreateUserCommandHandler(UserManager<AppUser> _userManager,
         //    Þifre kurallarý, ayný e-posta/kullanýcý adý kontrolü burada Identity tarafýndan yapýlýr.
         var result = await _userManager.CreateAsync(user, request.Password);
 
-        if (!result.Succeeded)
+        if (!result.Succeeded)//IdentityResult hatalrýný baseresultta yakalýyoruz 
             return BaseResult<object>.Fail(result.Errors);  // CustomErrorDescriber sayesinde Türkçe
 
         // 3) Doðrulama e-postasýný gönder

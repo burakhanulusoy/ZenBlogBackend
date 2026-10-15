@@ -72,6 +72,25 @@ namespace ZenBlog.API.Endpoints.Blog
             })
             .Produces(StatusCodes.Status200OK)
             .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+
+            //getblogsbycategoryId
+            blogs.MapGet("byCategoryId/{categoryId}", async (IMediator mediator , Guid categoryId) =>
+            {
+                var response = await mediator.Send(new GetBlogsByCategoryIdQuery(categoryId));
+
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            });
+
+            //getblogsbyuserId
+            blogs.MapGet("byUserId/{userId}", async (IMediator mediator, Guid userId) =>
+            {
+                var response = await mediator.Send(new GetBlogsByUserIdQuery(userId));
+
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            });
+
+
         }
     }
 }

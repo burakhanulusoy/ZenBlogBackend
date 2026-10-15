@@ -12,6 +12,8 @@ namespace ZenBlog.Application.Mappings.BlogMappings
             // Okuma: entity ? result
             CreateMap<Blog, GetBlogsQueryResult>();
             CreateMap<Blog, GetBlogByIdQueryResult>();
+            CreateMap<Blog, GetBlogsByCategoryIdQueryResult>();
+            CreateMap<Blog, GetBlogsByUserIdQueryResult>();
 
             // Oluþturma: command ? entity
             // Resimler IFormFile, entity'de string; onlarý handler yükleyip dolduruyor.

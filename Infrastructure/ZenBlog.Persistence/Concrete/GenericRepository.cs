@@ -39,20 +39,43 @@ namespace ZenBlog.Persistence.Concrete
             //var blogs = await _repository.GetAllAsync(x => x.Category, x => x.AppUser); kullanýmý
         }
 
+        public async Task<List<TEntity>> GetAllFilterAsync(Expression<Func<TEntity, bool>> filter)
+        {
+            return await _table.AsNoTracking().Where(filter).ToListAsync();
+
+        }
+
         public async Task<TEntity> GetByIdAsync(Guid id)
         {
             return await _table.FindAsync(id);
         }
 
-        public async Task<TEntity> GetSingle(Expression<Func<TEntity, bool>> filter)
+        public async Task<List<TEntity>> GetLatestAsync(int count)
         {
-            return await _table.AsNoTracking().FirstOrDefaultAsync(filter);
+            return await _table.AsNoTracking()
+                               .OrderByDescending(x=>x.CreatedAt)
+                               .Take(count)
+                               .ToListAsync();
+
 
         }
+
+        public async Task<List<TEntity>> GetLatestAsync(Expression<Func<TEntity, bool>> filter, int count)
+        {
+            return await _table.AsNoTracking()
+                               .Where(filter)
+                               .OrderByDescending(x => x.CreatedAt)
+                               .Take(count)
+                               .ToListAsync();
+        }
+
 
         public void Update(TEntity entity)
         {
             _context.Update(entity);
         }
+    
+        
+    
     }
 }
