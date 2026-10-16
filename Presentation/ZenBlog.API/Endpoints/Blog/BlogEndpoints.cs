@@ -11,7 +11,8 @@ namespace ZenBlog.API.Endpoints.Blog
     {
         public static void RegisterBlogEndpoints(this IEndpointRouteBuilder app)
         {
-            var blogs = app.MapGroup("/blogs").WithTags("Blogs");
+            //tümünü alma endpointisin
+            var blogs = app.MapGroup("/blogs").WithTags("Blogs");//.RequireAuthorization();
 
             // GET /api/blogs → tüm bloglar
             blogs.MapGet(string.Empty, async (IMediator mediator) =>
@@ -21,6 +22,11 @@ namespace ZenBlog.API.Endpoints.Blog
             })
             .Produces<BaseResult<List<GetBlogsQueryResult>>>(StatusCodes.Status200OK)
             .Produces<BaseResult<List<GetBlogsQueryResult>>>(StatusCodes.Status400BadRequest);
+            // .RequireAuthorization();
+            // bunu yaptıktan sonra 401 unothorizated hatası alır cunku arıtık korumalı bura
+            // giriş yapmış tokenı olmayanlar ıcın hatalı lakın gırııs yapıca token lusacak zaten onun ıcın hata vereycek ılerde bırde admın role gore olacak
+
+
 
             // GET /api/blogs/{id} → tek blog, bulunamazsa 404
             blogs.MapGet("{id}", async (IMediator mediator, Guid id) =>

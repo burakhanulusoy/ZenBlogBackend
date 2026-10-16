@@ -9,79 +9,73 @@ using ZenBlog.Persistence.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-
-
-
+// SIRA ÖNEMLÝ: Persistence (AddIdentity) önce, Infrastructure (JWT) sonra;
+// böylece JWT ayarlarý Identity'nin çerez varsayýlanlarýnýn üzerine yazýlýr.
 builder.Services.AddPersitenceServices(builder.Configuration)
                 .AddApplicationServices(builder.Configuration)
                 .AddInfrastructureServices(builder.Configuration);
 
-
-
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Angular (localhost:4200) API'ye istek atabilsin
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularClient", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 
 builder.Services.AddRateLimiter(options =>
 {
-    // "email-verification" adýnda bir kural tanýmlýyoruz:
-    // her IP adresi 1 dakika içinde en fazla 5 istek atabilir.
-    options.AddPolicy("email-verification", httpContext =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 5,
-                Window = TimeSpan.FromMinutes(1)
-            }));
-
-    // Sýnýr aþýlýnca 429 dön ve cevabý BaseResult formatýnda ver;
-    // böylece Angular her hatayý ayný yapýda okuyabilir.
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (context, cancellationToken) =>
     {
         await context.HttpContext.Response.WriteAsJsonAsync(
-            BaseResult<object>.Fail("Çok fazla deneme yaptýnýz. Lütfen bir dakika bekleyip tekrar deneyin."),
+            BaseResult<object>.Fail("Çok fazla deneme yaptýnýz. Lütfen biraz bekleyip tekrar deneyin."),
             cancellationToken);
     };
 
-    // Ýletiþim formu: ayný IP'den 10 dakikada en fazla 3 mesaj
+    // Doðrulama kodu: IP baþýna dakikada 5
+    options.AddPolicy("email-verification", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
+
+    // Login: IP baþýna dakikada 5 (brute force / credential stuffing'e karþý)
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
+
+    // Ýletiþim formu: IP baþýna 10 dakikada 3
     options.AddPolicy("contact-message", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 3,
-                Window = TimeSpan.FromMinutes(10)
-            }));
-
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 3, Window = TimeSpan.FromMinutes(10) }));
 });
-
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Hata middleware'i EN BAÞTA: sonraki her adýmýn hatasýný yakalayabilsin
+app.UseMiddleware<CustomExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
 
-app.UseRateLimiter();
-
-app.UseMiddleware<CustomExceptionHandlingMiddleware>();
-
 app.UseHttpsRedirection();
+app.UseCors("AngularClient");
+app.UseRateLimiter();
+app.UseAuthentication();   // 1) Token'ý oku ve doðrula: "bu kiþi KÝM?"
+app.UseAuthorization();    // 2) Kurallara bak: "bu kiþi buna YETKÝLÝ mi?"
 
-
-app.UseAuthorization();
-
-app.MapControllers();
-
+// Varsayýlan olarak her þey korumalý; herkese açýk endpoint'ler AllowAnonymous ile açýlýr.
+// ("Güvenli varsayýlan" yaklaþýmý: yeni bir endpoint eklemeyi unutsan bile korumasýz kalmaz.)
 app.MapGroup("/api")
-    .RegisterEndpoints();
+   .RequireAuthorization()
+   .RegisterEndpoints();
 
 app.Run();

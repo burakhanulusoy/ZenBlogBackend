@@ -1,5 +1,7 @@
 ﻿using MediatR;
+using ZenBlog.Application.Base;
 using ZenBlog.Application.Features.Commands.UserCommands;
+using ZenBlog.Application.Features.Results.UserResults;
 
 namespace ZenBlog.API.Endpoints.User;
 
@@ -7,7 +9,7 @@ public static class UserEndpoints
 {
     public static void RegisterUserEndpoints(this IEndpointRouteBuilder app)
     {
-        var users = app.MapGroup("/users").WithTags("Users");
+        var users = app.MapGroup("/users").WithTags("Users").AllowAnonymous();
 
         // Kayıt ol → POST /api/users/register
         users.MapPost("register", async (IMediator mediator, CreateUserCommand command) =>
@@ -31,5 +33,20 @@ public static class UserEndpoints
             return Results.Ok(response);
         })
         .RequireRateLimiting("email-verification");   // e-posta spam'ini engeller
+
+
+        // POST /api/users/login → { "email": "...", "password": "..." }
+        users.MapPost("login", async (IMediator mediator, LoginCommand command) =>
+        {
+            var response = await mediator.Send(command);
+            return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+        })
+        .RequireRateLimiting("login")
+        .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status200OK)
+        .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status400BadRequest);
+
+
+
+
     }
 }

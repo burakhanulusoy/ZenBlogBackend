@@ -55,7 +55,6 @@ namespace ZenBlog.Persistence.Extensions
             .AddDefaultTokenProviders();
 
 
-
             return services;
         }
 
