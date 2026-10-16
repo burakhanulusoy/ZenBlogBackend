@@ -55,7 +55,7 @@ public class CreateBlogValidator : AbstractValidator<CreateBlogCommand>
         RuleFor(x => x.CategoryId)
             .NotEmpty().WithMessage("Kategori seçilmelidir.");
 
-        RuleFor(x => x.AppUserId)
-            .NotEmpty().WithMessage("Yazar bilgisi boþ olamaz.");
+        //RuleFor(x => x.AppUserId)
+        //    .NotEmpty().WithMessage("Yazar bilgisi boþ olamaz.");
     }
 }

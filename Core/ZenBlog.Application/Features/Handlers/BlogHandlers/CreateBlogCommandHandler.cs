@@ -14,11 +14,17 @@ public class CreateBlogCommandHandler(IRepository<Blog> _repository,
                                       IRepository<Category> _categoryRepository,
                                       IUnitOfWork _unitOfWork,
                                       IMapper _mapper,
-                                      IFileService _fileService)
+                                      IFileService _fileService,
+                                      ICurrentUserService _currentUser)
     : IRequestHandler<CreateBlogCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(CreateBlogCommand request, CancellationToken cancellationToken)
     {
+        // Yazar token'dan okunuyor. Endpoint korumalý olduðu için normalde hep dolu gelir;
+        // okunamazsa güvenli tarafta kalýp iþlemi durduruyoruz.
+        if (_currentUser.UserId is null)
+            return BaseResult<object>.Fail("Kullanýcý bilgisi alýnamadý. Lütfen tekrar giriþ yapýn.");
+
         // Kategori gerçekten var mý? Resim yüklemeden ÖNCE kontrol ediyoruz;
         // yanlýþsa Azure'a hiç dosya gitmiyor.
         var category = await _categoryRepository.GetByIdAsync(request.CategoryId!.Value);
@@ -27,6 +33,9 @@ public class CreateBlogCommandHandler(IRepository<Blog> _repository,
             return BaseResult<object>.Fail("Seçilen kategori bulunamadý.");
 
         var blog = _mapper.Map<Blog>(request);
+
+        // Yazar istekten deðil TOKEN'dan geliyor: kimse baþkasý adýna blog yazamaz
+        blog.AppUserId = _currentUser.UserId.Value;
 
         // Resimleri yükle, adreslerini blog'a yaz
         blog.CoverImage = await UploadAsync(request.CoverImage!, cancellationToken);

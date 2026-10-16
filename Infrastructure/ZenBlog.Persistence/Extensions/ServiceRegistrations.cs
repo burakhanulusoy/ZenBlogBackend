@@ -41,7 +41,7 @@ namespace ZenBlog.Persistence.Extensions
                 options.User.RequireUniqueEmail = true;
                 options.Password.RequiredLength = 8;
                 options.Password.RequiredUniqueChars = 1;//en az 1 farklý karakter
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15); // Hesap kilitlendiðinde 15 dakika kapalý kalýr.
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10); // Hesap kilitlendiðinde 15 dakika kapalý kalýr.
                 options.Lockout.MaxFailedAccessAttempts = 5; // 5 kez yanlýþ girerse kilitlenir.
                 options.Lockout.AllowedForNewUsers = true; // Yeni kullanýcýlar için de geçerli olsun.
 

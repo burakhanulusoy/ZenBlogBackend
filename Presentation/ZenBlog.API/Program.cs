@@ -75,7 +75,7 @@ app.UseAuthorization();    // 2) Kurallara bak: "bu kiþi buna YETKÝLÝ mi?"
 // Varsayýlan olarak her þey korumalý; herkese açýk endpoint'ler AllowAnonymous ile açýlýr.
 // ("Güvenli varsayýlan" yaklaþýmý: yeni bir endpoint eklemeyi unutsan bile korumasýz kalmaz.)
 app.MapGroup("/api")
-   .RequireAuthorization()
+   .RequireAuthorization("AdminOnly")
    .RegisterEndpoints();
 
 app.Run();

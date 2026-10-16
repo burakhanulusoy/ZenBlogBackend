@@ -19,5 +19,5 @@ public record CreateBlogCommand : IRequest<BaseResult<object>>
     public string? Title3 { get; init; }
     public string? Description4 { get; init; }
     public Guid? CategoryId { get; init; }
-    public Guid? AppUserId { get; init; }
+   // public Guid? AppUserId { get; init; }
 }

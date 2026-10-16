@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
 using ZenBlog.Application.Features.Commands.RoleCommands;
 using ZenBlog.Domain.Entities;
 
@@ -10,7 +11,7 @@ public class RemoveRoleCommandHandler(RoleManager<AppRole> _roleManager)
     : IRequestHandler<RemoveRoleCommand, BaseResult<object>>
 {
     // Sistemin çalýþmasý için gerekli roller silinemez (kod bu adlara göre yetki veriyor)
-    private static readonly string[] ProtectedRoles = ["Admin"];
+    private static readonly string[] ProtectedRoles = [Roles.Admin];
 
     public async Task<BaseResult<object>> Handle(RemoveRoleCommand request, CancellationToken cancellationToken)
     {

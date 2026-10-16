@@ -14,7 +14,7 @@ public class CreateSubCommentValidator : AbstractValidator<CreateSubCommentComma
         RuleFor(x => x.CommentId)
             .NotEmpty().WithMessage("Yorum bilgisi boþ olamaz.");
 
-        RuleFor(x => x.AppUserId)
-            .NotEmpty().WithMessage("Kullanýcý bilgisi boþ olamaz.");
+        //RuleFor(x => x.AppUserId)
+        //    .NotEmpty().WithMessage("Kullanýcý bilgisi boþ olamaz.");
     }
 }

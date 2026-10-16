@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
 using ZenBlog.Application.Features.Commands.UserCommands;
 using ZenBlog.Application.Services.MailServices;
 using ZenBlog.Domain.Entities;
@@ -24,6 +25,9 @@ public class CreateUserCommandHandler(UserManager<AppUser> _userManager,
 
         if (!result.Succeeded)//IdentityResult hatalrýný baseresultta yakalýyoruz 
             return BaseResult<object>.Fail(result.Errors);  // CustomErrorDescriber sayesinde Türkçe
+     
+        await _userManager.AddToRoleAsync(user, Roles.User);
+
 
         // 3) Doðrulama e-postasýný gönder
         await _emailConfirmationService.SendConfirmationEmailAsync(user);

@@ -6,8 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
 using ZenBlog.Infrastructure.Services.Azure;
+using ZenBlog.Infrastructure.Services.CurrentUser;
 using ZenBlog.Infrastructure.Services.EmailService;
 using ZenBlog.Infrastructure.Services.Jwt;
 
@@ -85,8 +87,18 @@ public static class ServiceRegistrations
         });
 
 
-        services.AddAuthorization();
-        
+        // Yetkilendirme kurallarý (policy). Ýsim verilmiþ bir kural, endpoint'lerde adýyla kullanýlýr.
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
+        });
+
+
+        // HttpContext'e servislerden eriþebilmek için
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+
         return services;
     }
 }
