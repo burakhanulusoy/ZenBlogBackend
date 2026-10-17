@@ -23,7 +23,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AngularClient", policy =>
         policy.WithOrigins("http://localhost:4200")
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
 builder.Services.AddRateLimiter(options =>
@@ -75,7 +76,7 @@ app.UseAuthorization();    // 2) Kurallara bak: "bu kiþi buna YETKÝLÝ mi?"
 // Varsayýlan olarak her þey korumalý; herkese açýk endpoint'ler AllowAnonymous ile açýlýr.
 // ("Güvenli varsayýlan" yaklaþýmý: yeni bir endpoint eklemeyi unutsan bile korumasýz kalmaz.)
 app.MapGroup("/api")
-   .RequireAuthorization("AdminOnly")
+  // .RequireAuthorization("AdminOnly")
    .RegisterEndpoints();
 
 app.Run();
