@@ -11,6 +11,7 @@ using ZenBlog.Application.Contracts.Infrastructure;
 using ZenBlog.Infrastructure.Services.Azure;
 using ZenBlog.Infrastructure.Services.CurrentUser;
 using ZenBlog.Infrastructure.Services.EmailService;
+using ZenBlog.Infrastructure.Services.GoogleAuth;
 using ZenBlog.Infrastructure.Services.Jwt;
 
 namespace ZenBlog.Infrastructure.Extensions;
@@ -98,6 +99,10 @@ public static class ServiceRegistrations
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+
+        // Google ile giriþ: token doðrulama
+        services.Configure<GoogleAuthSettings>(configuration.GetSection("GoogleAuth"));
+        services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
         return services;
     }

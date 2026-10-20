@@ -48,7 +48,7 @@ namespace ZenBlog.Persistence.Extensions
 
                 // E-posta doðrulamada uzun token yerine 6 haneli kod üre
                 options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
-
+                options.Tokens.PasswordResetTokenProvider = TokenOptions.DefaultEmailProvider;
 
             }).AddEntityFrameworkStores<AppDbContext>()
             .AddErrorDescriber<CustomErrorDescriber>()
