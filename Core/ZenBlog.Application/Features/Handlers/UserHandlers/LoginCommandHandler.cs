@@ -40,12 +40,16 @@ public class LoginCommandHandler(UserManager<AppUser> _userManager,
             return BaseResult<LoginCommandResult>.Fail(InvalidCredentialsMessage);
         }
 
+
+
+
         // 4) E-posta doðrulanmýþ mý?
         //    Bu kontrolü þifreden SONRA yapýyoruz: þifreyi bilmeyen biri,
         //    bu mesaj sayesinde hesabýn var olduðunu öðrenemesin.
         if (!user.EmailConfirmed)
             return BaseResult<LoginCommandResult>.Fail(
-                "E-posta adresiniz doðrulanmamýþ. Lütfen e-postanýza gelen kodu girin veya yeni kod isteyin.");
+                "EmailNotConfirmed",
+                "E-posta adresiniz doðrulanmamýþ. Lütfen e-postanýza gelen kodu girin.");
 
         // 5) Baþarýlý giriþ ? hatalý deneme sayacýný sýfýrla
         await _userManager.ResetAccessFailedCountAsync(user);

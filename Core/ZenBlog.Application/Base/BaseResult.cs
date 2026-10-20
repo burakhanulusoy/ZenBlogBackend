@@ -80,7 +80,22 @@ public class BaseResult<T>
         };
     }
 
-
+    // Belirli bir hata koduyla baþarýsýz sonuç.
+    // Frontend mesaj metnine deðil bu koda bakarak karar verir (mesaj deðiþse bile çalýþýr).
+    public static BaseResult<T> Fail(string propertyName, string message)
+    {
+        return new BaseResult<T>
+        {
+            Errors = new List<Error>
+        {
+            new Error
+            {
+                PropertyName = propertyName,
+                ErrorMessage = message
+            }
+        }
+        };
+    }
 
 
 
