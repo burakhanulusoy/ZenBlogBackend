@@ -92,7 +92,10 @@ public static class ServiceRegistrations
         // Yetkilendirme kurallarý (policy). Ýsim verilmiþ bir kural, endpoint'lerde adýyla kullanýlýr.  
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
+            options.AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(Roles.Admin));
+
+            // RequireRole birden fazla rol alýrsa "bunlardan BÝRÝ yeterli" demek
+            options.AddPolicy(Policies.WriterOrAdmin, policy => policy.RequireRole(Roles.Writer, Roles.Admin));
         });
 
 

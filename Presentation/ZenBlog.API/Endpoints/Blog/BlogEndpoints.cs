@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
+using ZenBlog.Application.Contracts.Infrastructure;
 using ZenBlog.Application.Features.Commands.BlogCommands;
 using ZenBlog.Application.Features.Queries.BlogQueries;
 using ZenBlog.Application.Features.Results.BlogResults;
@@ -96,6 +98,15 @@ namespace ZenBlog.API.Endpoints.Blog
                 return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
             });
 
+
+            // GET /api/blogs/my → giriş yapan yazarın kendi blogları
+            // Kullanıcı Id'si istekten DEĞİL token'dan; kimse başkasının listesini "kendi listesi" gibi çekemez
+            blogs.MapGet("my", async (IMediator mediator, ICurrentUserService currentUser) =>
+            {
+                var response = await mediator.Send(new GetBlogsByUserIdQuery(currentUser.UserId!.Value));
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            .RequireAuthorization(Policies.WriterOrAdmin);
 
         }
     }
