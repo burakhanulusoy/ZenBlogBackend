@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using ZenBlog.API.Filters;
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Features.Commands.UserCommands;
 using ZenBlog.Application.Features.Results.UserResults;
@@ -16,7 +17,8 @@ public static class UserEndpoints
         {
             var response = await mediator.Send(command);
             return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
-        });
+        })
+            .AddEndpointFilter<TurnstileValidationFilter>();   // : bot koruması
 
         // Kodu doğrula → POST /api/users/confirm-email   Body: { "email": "...", "code": "482913" }
         users.MapPost("confirm-email", async (IMediator mediator, ConfirmEmailCommand command) =>
@@ -43,7 +45,8 @@ public static class UserEndpoints
         })
         .RequireRateLimiting("login")
         .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status200OK)
-        .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status400BadRequest);
+        .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status400BadRequest)
+        .AddEndpointFilter<TurnstileValidationFilter>();   // YENİ: bot koruması
 
         // POST /api/users/google-login   Body: { "idToken": "..." }
         users.MapPost("google-login", async (IMediator mediator, GoogleLoginCommand command) =>

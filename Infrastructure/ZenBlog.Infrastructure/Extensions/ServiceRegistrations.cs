@@ -13,6 +13,7 @@ using ZenBlog.Infrastructure.Services.CurrentUser;
 using ZenBlog.Infrastructure.Services.EmailService;
 using ZenBlog.Infrastructure.Services.GoogleAuth;
 using ZenBlog.Infrastructure.Services.Jwt;
+using ZenBlog.Infrastructure.Services.Turnstile;
 
 namespace ZenBlog.Infrastructure.Extensions;
 
@@ -103,6 +104,13 @@ public static class ServiceRegistrations
         // Google ile giriþ: token doðrulama
         services.Configure<GoogleAuthSettings>(configuration.GetSection("GoogleAuth"));
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
+
+        // Cloudflare Turnstile: bot korumasý
+        services.Configure<TurnstileSettings>(configuration.GetSection("Turnstile"));
+
+        // AddHttpClient: TurnstileService'e hazýr, doðru yönetilen bir HttpClient verir
+        services.AddHttpClient<ITurnstileService, TurnstileService>();
 
         return services;
     }
