@@ -38,6 +38,11 @@ public class JwtService(UserManager<AppUser> _userManager,
             new("fullName", $"{user.Name} {user.Surname}")
         };
 
+        // YENÝ: Profil fotoðrafý (varsa). Frontend sað üstteki avatarda gösteriyor.
+        // Profil güncellenince yeni token üretildiði için fotoðraf deðiþince bu da güncellenir.
+        if (!string.IsNullOrWhiteSpace(user.ImageUrl))
+            claims.Add(new Claim("imageUrl", user.ImageUrl));
+
         // 2) ROLLER: her rol ayrý bir claim olarak eklenir.
         //    RequireRole("Admin") gibi kurallar bu claim'lere bakarak karar verir.
         var roles = await _userManager.GetRolesAsync(user);

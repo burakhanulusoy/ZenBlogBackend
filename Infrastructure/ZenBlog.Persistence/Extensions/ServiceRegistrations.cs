@@ -55,6 +55,8 @@ namespace ZenBlog.Persistence.Extensions
             .AddDefaultTokenProviders();
 
 
+            services.AddScoped<IAccountContentService, AccountContentService>();   // YENÝ: hesap iþlemlerinde içerik gizle/aç
+
             return services;
         }
 

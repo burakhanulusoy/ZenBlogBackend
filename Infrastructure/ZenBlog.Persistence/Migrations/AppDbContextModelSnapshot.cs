@@ -217,9 +217,18 @@ namespace ZenBlog.Persistence.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<int>("AccountStatus")
+                        .HasColumnType("int");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletionReminderSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletionRequestedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -346,6 +355,9 @@ namespace ZenBlog.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("HiddenByAccount")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -423,6 +435,9 @@ namespace ZenBlog.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("HiddenByAccount")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -565,6 +580,9 @@ namespace ZenBlog.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("HiddenByAccount")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -651,6 +669,61 @@ namespace ZenBlog.Persistence.Migrations
                     b.HasIndex("TeamId");
 
                     b.ToTable("TeamSocialMedias");
+                });
+
+            modelBuilder.Entity("ZenBlog.Domain.Entities.UserBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("BlockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("BlockedByAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EvidenceUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("UnblockReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("UnblockedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UnblockedByAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlockedByAdminId");
+
+                    b.HasIndex("UnblockedByAdminId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserBlocks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -772,8 +845,36 @@ namespace ZenBlog.Persistence.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("ZenBlog.Domain.Entities.UserBlock", b =>
+                {
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "BlockedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("BlockedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "UnblockedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("UnblockedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "User")
+                        .WithMany("Blocks")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BlockedByAdmin");
+
+                    b.Navigation("UnblockedByAdmin");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ZenBlog.Domain.Entities.AppUser", b =>
                 {
+                    b.Navigation("Blocks");
+
                     b.Navigation("Blogs");
 
                     b.Navigation("Comments");

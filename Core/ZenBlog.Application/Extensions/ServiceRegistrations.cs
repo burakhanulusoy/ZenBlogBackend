@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ZenBlog.Application.Assembly;
 using ZenBlog.Application.Behaviors;
+using ZenBlog.Application.Services.AccountServices;
 using ZenBlog.Application.Services.MailServices;
 
 namespace ZenBlog.Application.Extensions
@@ -36,6 +37,9 @@ namespace ZenBlog.Application.Extensions
 
             services.AddScoped<IEmailConfirmationService,EmailConfirmationService>();
 
+            services.AddScoped<IAccountLoginGuard, AccountLoginGuard>();   // YENÝ: giriþte hesap durumu kontrolü
+
+            services.AddScoped<IAccountEmailService, AccountEmailService>();   // YENÝ: hesap durumu mailleri
 
             return services;
         }

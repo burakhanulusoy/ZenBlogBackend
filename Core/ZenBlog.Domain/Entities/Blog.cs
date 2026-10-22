@@ -29,4 +29,9 @@ public class Blog:BaseEntity
 
     public virtual IList<Comment> Comments { get; set; }
 
+
+    // YENÝ: Bu kayýt, sahibinin hesap iþlemi (kapatma / bloke) yüzünden mi gizlendi?
+    // Geri açarken SADECE bunlar geri gelir; kiþinin kendi sildiði bir blog geri dönmez.
+    public bool HiddenByAccount { get; set; }
+
 }

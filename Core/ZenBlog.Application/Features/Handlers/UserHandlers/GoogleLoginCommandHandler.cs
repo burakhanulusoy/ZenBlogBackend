@@ -6,13 +6,15 @@ using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
 using ZenBlog.Application.Features.Commands.UserCommands;
 using ZenBlog.Application.Features.Results.UserResults;
+using ZenBlog.Application.Services.AccountServices;   // YENÝ
 using ZenBlog.Domain.Entities;
 
 namespace ZenBlog.Application.Features.Handlers.UserHandlers;
 
 public class GoogleLoginCommandHandler(UserManager<AppUser> _userManager,
                                        IGoogleAuthService _googleAuthService,
-                                       IJwtService _jwtService)
+                                       IJwtService _jwtService,
+                                       IAccountLoginGuard _accountLoginGuard)   // YENÝ
     : IRequestHandler<GoogleLoginCommand, BaseResult<LoginCommandResult>>
 {
     private const string GoogleProvider = "Google";
@@ -21,12 +23,14 @@ public class GoogleLoginCommandHandler(UserManager<AppUser> _userManager,
     {
         // 1) Google token'ý gerçekten Google'dan mý, bizim uygulamamýz için mi?
         var googleUser = await _googleAuthService.ValidateIdTokenAsync(request.IdToken!);
-
         if (googleUser is null)
             return BaseResult<LoginCommandResult>.Fail("Google ile giriþ doðrulanamadý. Lütfen tekrar deneyin.");
 
         if (!googleUser.EmailVerified)
             return BaseResult<LoginCommandResult>.Fail("Google hesabýnýzýn e-posta adresi doðrulanmamýþ.");
+
+        // YENÝ: kapatma iptal edildi mi? (cevapta frontend'e bildirmek için)
+        var accountState = AccountLoginState.Allowed;
 
         // 2) Bu e-postaya ait kullanýcý var mý?
         var user = await _userManager.FindByEmailAsync(googleUser.Email);
@@ -59,6 +63,19 @@ public class GoogleLoginCommandHandler(UserManager<AppUser> _userManager,
                 return BaseResult<LoginCommandResult>.Fail(
                     "Hesabýnýz geçici olarak kilitlendi, lütfen daha sonra tekrar deneyin.");
 
+            // YENÝ: HESAP DURUMU (normal giriþle ayný kural)
+            // Bloke / kapanmýþ hesaba Google ile de girilemez; ayný e-postayla yeni hesap da açýlamaz
+            // çünkü kullanýcý satýrý duruyor (FindByEmailAsync onu buluyor).
+            accountState = await _accountLoginGuard.CheckAsync(user, cancellationToken);
+
+            if (accountState == AccountLoginState.Blocked)
+                return BaseResult<LoginCommandResult>.Fail("AccountBlocked",
+                    "Hesabýnýz bloke edildi. Ayrýntýlar e-posta adresinize gönderildi.");
+
+            if (accountState == AccountLoginState.Closed)
+                return BaseResult<LoginCommandResult>.Fail("AccountClosed",
+                    "Bu hesap kapatýldý. Bu e-posta adresiyle tekrar giriþ yapýlamaz.");
+
             // GÜVENLÝK: Hesap var ama e-postasý hiç doðrulanmamýþsa, o hesabý ve þifresini
             // e-postanýn sahibi olmayan biri açmýþ olabilir (baþkasýnýn e-postasýyla kayýt olup býrakmýþ).
             // Google, e-postanýn gerçek sahibinin bu kiþi olduðunu kanýtladý; eski þifreyi kaldýrýyoruz ki
@@ -84,6 +101,10 @@ public class GoogleLoginCommandHandler(UserManager<AppUser> _userManager,
         // 5) Normal login'deki gibi BÝZÝM JWT'mizi üret
         var token = await _jwtService.GenerateTokenAsync(user);
 
+        // YENÝ: kapatma iptal edildiyse frontend'e haber ver
+        if (accountState == AccountLoginState.Reactivated)
+            token = token with { AccountReactivated = true };
+
         return BaseResult<LoginCommandResult>.Success(token);
     }
 
@@ -97,7 +118,6 @@ public class GoogleLoginCommandHandler(UserManager<AppUser> _userManager,
             baseName = "user";
 
         var userName = baseName;
-
         while (await _userManager.FindByNameAsync(userName) is not null)
             userName = $"{baseName}{Random.Shared.Next(1000, 9999)}";
 

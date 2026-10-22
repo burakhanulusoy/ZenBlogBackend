@@ -9,6 +9,7 @@ public static class ImageFolders
     public const string Categories = "categories";
     public const string Teams = "teams";
     public const string Abouts = "abouts";
+    public const string Blocks = "blocks";   //blog gerekçeli 
 
-    public static readonly string[] All = [Blogs, Users, Categories, Teams, Abouts];
+    public static readonly string[] All = [Blogs, Users, Categories, Teams, Abouts,Blocks];
 }

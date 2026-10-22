@@ -1,14 +1,20 @@
-using Azure.Storage.Blobs;
+ï»¿using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
+using ZenBlog.Domain.Entities;
+using ZenBlog.Domain.Enums;
 using ZenBlog.Infrastructure.Services.Azure;
+using ZenBlog.Infrastructure.Services.BackgroundJobs;
 using ZenBlog.Infrastructure.Services.CurrentUser;
 using ZenBlog.Infrastructure.Services.EmailService;
 using ZenBlog.Infrastructure.Services.GoogleAuth;
@@ -34,18 +40,18 @@ public static class ServiceRegistrations
         // ---------------------------------------------------------------
         // JWT
         // ---------------------------------------------------------------
-        // Token ÜRETÝMÝ için: JwtService IOptions<JwtTokenOptions> ile ayarlarý okur
+        // Token ÃœRETÄ°MÄ° iÃ§in: JwtService IOptions<JwtTokenOptions> ile ayarlarÄ± okur
         services.Configure<JwtTokenOptions>(configuration.GetSection(nameof(JwtTokenOptions)));
         services.AddScoped<IJwtService, JwtService>();
 
-        // Token DOÐRULAMASI için ayarlarý burada da okuyoruz.
-        // Ayar yoksa uygulama açýlýrken net bir hatayla dursun; ilk istekte gizemli hatalar vermesin.
+        // Token DOÄžRULAMASI iÃ§in ayarlarÄ± burada da okuyoruz.
+        // Ayar yoksa uygulama aÃ§Ä±lÄ±rken net bir hatayla dursun; ilk istekte gizemli hatalar vermesin.
         var jwtOptions = configuration.GetSection(nameof(JwtTokenOptions)).Get<JwtTokenOptions>()
-            ?? throw new InvalidOperationException("JwtTokenOptions ayarlarý bulunamadý (secrets.json'u kontrol edin).");
+            ?? throw new InvalidOperationException("JwtTokenOptions ayarlarÄ± bulunamadÄ± (secrets.json'u kontrol edin).");
 
-        // AddIdentity (Persistence'ta) varsayýlan olarak ÇEREZ (cookie) tabanlý giriþ kurar.
-        // Burada varsayýlanlarý JWT'ye çeviriyoruz. Persistence kaydý Program.cs'te bundan ÖNCE
-        // çaðrýldýðý için bizim ayarlarýmýz sonra gelip geçerli oluyor; sýra önemli.
+        // AddIdentity (Persistence'ta) varsayÄ±lan olarak Ã‡EREZ (cookie) tabanlÄ± giriÅŸ kurar.
+        // Burada varsayÄ±lanlarÄ± JWT'ye Ã§eviriyoruz. Persistence kaydÄ± Program.cs'te bundan Ã–NCE
+        // Ã§aÄŸrÄ±ldÄ±ÄŸÄ± iÃ§in bizim ayarlarÄ±mÄ±z sonra gelip geÃ§erli oluyor; sÄ±ra Ã¶nemli.
         services.AddAuthentication(options =>
         {
             options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,65 +62,88 @@ public static class ServiceRegistrations
         {
             opt.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,               // token bizim API'miz tarafýndan mý yayýnlanmýþ?
-                ValidateAudience = true,             // token bizim frontend için mi üretilmiþ?
-                ValidateIssuerSigningKey = true,     // imza bizim Key'imizle mi atýlmýþ?
-                ValidateLifetime = true,             // süresi dolmuþ mu?
+                ValidateIssuer = true,               // token bizim API'miz tarafÄ±ndan mÄ± yayÄ±nlanmÄ±ÅŸ?
+                ValidateAudience = true,             // token bizim frontend iÃ§in mi Ã¼retilmiÅŸ?
+                ValidateIssuerSigningKey = true,     // imza bizim Key'imizle mi atÄ±lmÄ±ÅŸ?
+                ValidateLifetime = true,             // sÃ¼resi dolmuÅŸ mu?
                 ValidIssuer = jwtOptions.Issuer,
                 ValidAudience = jwtOptions.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
-                ClockSkew = TimeSpan.Zero            // süre dolunca 5 dk tolerans yok, anýnda geçersiz
+                ClockSkew = TimeSpan.Zero            // sÃ¼re dolunca 5 dk tolerans yok, anÄ±nda geÃ§ersiz
             };
 
-            // 401 ve 403 cevaplarýný da diðer hatalar gibi BaseResult formatýnda dön
+            // 401 ve 403 cevaplarÄ±nÄ± da diÄŸer hatalar gibi BaseResult formatÄ±nda dÃ¶n
             opt.Events = new JwtBearerEvents
             {
-                // Token yok, geçersiz ya da süresi dolmuþ ? 401
-                OnChallenge = async context =>
+
+                // YENÄ°: Token imza ve sÃ¼re olarak geÃ§erli; ama sahibi hÃ¢lÃ¢ AKTÄ°F mi?
+                // Bloke edilen ya da "HesabÄ±mÄ± kapat" diyen kiÅŸinin elindeki token sÃ¼resi dolmasa da
+                // bir sonraki istekte reddedilir â†’ 401 â†’ frontend Ã§Ä±kÄ±ÅŸ yaptÄ±rÄ±r.
+                // (Her istekte veritabanÄ±na bir hafif sorgu atar; bu proje iÃ§in sorun deÄŸil.)
+                OnTokenValidated = async context =>
                 {
-                    context.HandleResponse();   // ASP.NET Core'un varsayýlan boþ cevabýný engelle
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsJsonAsync(
-                        BaseResult<object>.Fail("Bu iþlem için giriþ yapmalýsýnýz."));
+                    var userManager = context.HttpContext.RequestServices
+                        .GetRequiredService<UserManager<AppUser>>();
+
+                    var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                                 ?? context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+                    var user = userId is null ? null : await userManager.FindByIdAsync(userId);
+
+                    if (user is null || user.AccountStatus != AccountStatus.Active)
+                        context.Fail("Hesap aktif deÄŸil.");
                 },
 
-                // Token geçerli ama rol yetmiyor (örn. User, Admin endpoint'ine girmeye çalýþtý) ? 403
+                // Token yok, geÃ§ersiz ya da sÃ¼resi dolmuÅŸ ? 401
+                OnChallenge = async context =>
+                {
+                    context.HandleResponse();   // ASP.NET Core'un varsayÄ±lan boÅŸ cevabÄ±nÄ± engelle
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsJsonAsync(
+                        BaseResult<object>.Fail("Bu iÅŸlem iÃ§in giriÅŸ yapmalÄ±sÄ±nÄ±z."));
+                },
+
+                // Token geÃ§erli ama rol yetmiyor (Ã¶rn. User, Admin endpoint'ine girmeye Ã§alÄ±ÅŸtÄ±) ? 403
                 OnForbidden = async context =>
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     await context.Response.WriteAsJsonAsync(
-                        BaseResult<object>.Fail("Bu iþlem için yetkiniz yok."));
+                        BaseResult<object>.Fail("Bu iÅŸlem iÃ§in yetkiniz yok."));
                 }
             };
         });
 
 
-        // Yetkilendirme kurallarý (policy). Ýsim verilmiþ bir kural, endpoint'lerde adýyla kullanýlýr.  
+        // Yetkilendirme kurallarÄ± (policy). Ä°sim verilmiÅŸ bir kural, endpoint'lerde adÄ±yla kullanÄ±lÄ±r.  
         services.AddAuthorization(options =>
         {
             options.AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(Roles.Admin));
 
-            // RequireRole birden fazla rol alýrsa "bunlardan BÝRÝ yeterli" demek
+            // RequireRole birden fazla rol alÄ±rsa "bunlardan BÄ°RÄ° yeterli" demek
             options.AddPolicy(Policies.WriterOrAdmin, policy => policy.RequireRole(Roles.Writer, Roles.Admin));
         });
 
 
-        // HttpContext'e servislerden eriþebilmek için
+        // HttpContext'e servislerden eriÅŸebilmek iÃ§in
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 
-        // Google ile giriþ: token doðrulama
+        // Google ile giriÅŸ: token doÄŸrulama
         services.Configure<GoogleAuthSettings>(configuration.GetSection("GoogleAuth"));
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
 
-        // Cloudflare Turnstile: bot korumasý
+        // Cloudflare Turnstile: bot korumasÄ±
         services.Configure<TurnstileSettings>(configuration.GetSection("Turnstile"));
 
-        // AddHttpClient: TurnstileService'e hazýr, doðru yönetilen bir HttpClient verir
+        // AddHttpClient: TurnstileService'e hazÄ±r, doÄŸru yÃ¶netilen bir HttpClient verir
         services.AddHttpClient<ITurnstileService, TurnstileService>();
 
+
+
+        // YENÄ°: Arka plan gÃ¶revi: hesap kapanmadan 3 gÃ¼n Ã¶nce hatÄ±rlatma maili
+        services.AddHostedService<AccountDeletionReminderService>();
         return services;
     }
 }
