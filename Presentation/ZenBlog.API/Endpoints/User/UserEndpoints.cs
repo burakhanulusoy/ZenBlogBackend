@@ -4,8 +4,11 @@ using ZenBlog.API.Filters;
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Features.Commands.UserCommands;
+using ZenBlog.Application.Features.Commands.WriterApplicationCommands;
 using ZenBlog.Application.Features.Queries.UserQueries;
+using ZenBlog.Application.Features.Queries.WriterApplicationQueries;
 using ZenBlog.Application.Features.Results.UserResults;
+using ZenBlog.Application.Features.Results.WriterApplicationResults;
 
 namespace ZenBlog.API.Endpoints.User;
 
@@ -116,6 +119,26 @@ public static class UserEndpoints
         .DisableAntiforgery()
         .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status200OK)
         .Produces<BaseResult<LoginCommandResult>>(StatusCodes.Status400BadRequest);
+
+
+        // YENİ: YAZARLIK BAŞVURUSU (kendi başvurum)
+        // GET /api/users/me/writer-application → başvurabilir miyim, son başvurum ne durumda
+        me.MapGet("writer-application", async (IMediator mediator) =>
+        {
+            var response = await mediator.Send(new GetMyWriterApplicationQuery());
+            return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+        })
+        .Produces<BaseResult<MyWriterApplicationResult>>(StatusCodes.Status200OK);
+
+        // POST /api/users/me/writer-application   Body: { categoryIds, motivation, experience, sampleLinks, acceptedRules }
+        me.MapPost("writer-application", async (IMediator mediator, SubmitWriterApplicationCommand command) =>
+        {
+            var response = await mediator.Send(command);
+            return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+        })
+        .Produces<BaseResult<object>>(StatusCodes.Status200OK)
+        .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
 
 
         // =================================================================

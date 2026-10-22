@@ -529,6 +529,47 @@ namespace ZenBlog.Persistence.Migrations
                     b.ToTable("ContactMessages");
                 });
 
+            modelBuilder.Entity("ZenBlog.Domain.Entities.RoleChangeLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ChangedByAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAdded")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByAdminId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RoleChangeLogs");
+                });
+
             modelBuilder.Entity("ZenBlog.Domain.Entities.SocialMedia", b =>
                 {
                     b.Property<Guid>("Id")
@@ -726,6 +767,70 @@ namespace ZenBlog.Persistence.Migrations
                     b.ToTable("UserBlocks");
                 });
 
+            modelBuilder.Entity("ZenBlog.Domain.Entities.WriterApplication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DecidedByAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Experience")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Motivation")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SampleLinks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Topics")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedByAdminId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("WriterApplications");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("ZenBlog.Domain.Entities.AppRole", null)
@@ -815,6 +920,25 @@ namespace ZenBlog.Persistence.Migrations
                     b.Navigation("Blog");
                 });
 
+            modelBuilder.Entity("ZenBlog.Domain.Entities.RoleChangeLog", b =>
+                {
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "ChangedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("ChangedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChangedByAdmin");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ZenBlog.Domain.Entities.SubComment", b =>
                 {
                     b.HasOne("ZenBlog.Domain.Entities.AppUser", "AppUser")
@@ -867,6 +991,24 @@ namespace ZenBlog.Persistence.Migrations
                     b.Navigation("BlockedByAdmin");
 
                     b.Navigation("UnblockedByAdmin");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ZenBlog.Domain.Entities.WriterApplication", b =>
+                {
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "DecidedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("DecidedByAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ZenBlog.Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DecidedByAdmin");
 
                     b.Navigation("User");
                 });

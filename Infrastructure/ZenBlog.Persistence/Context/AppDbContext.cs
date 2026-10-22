@@ -36,6 +36,46 @@ namespace ZenBlog.Persistence.Context
                 entity.Property(b => b.Reason).HasMaxLength(1000).IsRequired();
                 entity.Property(b => b.EvidenceUrl).HasMaxLength(500).IsRequired();
                 entity.Property(b => b.UnblockReason).HasMaxLength(1000);
+
+
+                // YENÝ: RoleChangeLog ? AppUser'a iki iliþki (rolü deðiþen, deðiþtiren admin)
+                modelBuilder.Entity<RoleChangeLog>(entity =>
+                {
+                    entity.HasOne(r => r.User)
+                          .WithMany()
+                          .HasForeignKey(r => r.UserId)
+                          .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasOne(r => r.ChangedByAdmin)
+                          .WithMany()
+                          .HasForeignKey(r => r.ChangedByAdminId)
+                          .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.Property(r => r.RoleName).HasMaxLength(256).IsRequired();
+                });
+
+                // YENÝ: WriterApplication ? AppUser'a iki iliþki (baþvuran, karar veren admin)
+                modelBuilder.Entity<WriterApplication>(entity =>
+                {
+                    entity.HasOne(a => a.User)
+                          .WithMany()
+                          .HasForeignKey(a => a.UserId)
+                          .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasOne(a => a.DecidedByAdmin)
+                          .WithMany()
+                          .HasForeignKey(a => a.DecidedByAdminId)
+                          .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.Property(a => a.Topics).HasMaxLength(500).IsRequired();
+                    entity.Property(a => a.Motivation).HasMaxLength(2000).IsRequired();
+                    entity.Property(a => a.Experience).HasMaxLength(1000);
+                    entity.Property(a => a.SampleLinks).HasMaxLength(1000);
+                    entity.Property(a => a.RejectReason).HasMaxLength(1000);
+                });
+
+
+
             });
 
             foreach (var entitiyType in modelBuilder.Model.GetEntityTypes())
@@ -69,6 +109,9 @@ namespace ZenBlog.Persistence.Context
         public DbSet<TeamSocialMedia> TeamSocialMedias { get; set; }
         public DbSet<SubComment> SubComments { get; set; }
         public DbSet<Comment> Comments { get; set; }
-        public DbSet<UserBlock> UserBlocks { get; set; }   // YENÝ
+        public DbSet<UserBlock> UserBlocks { get; set; }
+        public DbSet<RoleChangeLog> RoleChangeLogs { get; set; }   
+
+        public DbSet<WriterApplication> WriterApplications { get; set; }   
     }
 }

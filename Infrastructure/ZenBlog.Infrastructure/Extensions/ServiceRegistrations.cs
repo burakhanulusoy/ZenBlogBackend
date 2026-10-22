@@ -80,6 +80,10 @@ public static class ServiceRegistrations
                 // Bloke edilen ya da "Hesabımı kapat" diyen kişinin elindeki token süresi dolmasa da
                 // bir sonraki istekte reddedilir → 401 → frontend çıkış yaptırır.
                 // (Her istekte veritabanına bir hafif sorgu atar; bu proje için sorun değil.)
+                // Token imza ve süre olarak geçerli; ama:
+                //   1) sahibi hâlâ AKTİF mi? (bloke / hesap kapatma)
+                //   2) DEĞİŞTİ: token'daki damga güncel mi? (rol değiştiyse ya da şifre sıfırlandıysa eskidir)
+                // İkisinden biri tutmazsa token reddedilir → 401 → frontend çıkış yaptırır.
                 OnTokenValidated = async context =>
                 {
                     var userManager = context.HttpContext.RequestServices
@@ -91,7 +95,14 @@ public static class ServiceRegistrations
                     var user = userId is null ? null : await userManager.FindByIdAsync(userId);
 
                     if (user is null || user.AccountStatus != AccountStatus.Active)
+                    {
                         context.Fail("Hesap aktif değil.");
+                        return;
+                    }
+
+                    var tokenStamp = context.Principal?.FindFirstValue("stamp");
+                    if (tokenStamp != user.SecurityStamp)
+                        context.Fail("Oturum bilgileri değişti, lütfen tekrar giriş yapın.");
                 },
 
                 // Token yok, geçersiz ya da süresi dolmuş ? 401

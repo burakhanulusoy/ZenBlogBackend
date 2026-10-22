@@ -43,6 +43,11 @@ public class JwtService(UserManager<AppUser> _userManager,
         if (!string.IsNullOrWhiteSpace(user.ImageUrl))
             claims.Add(new Claim("imageUrl", user.ImageUrl));
 
+        // YENÝ: Hesap damgasý (SecurityStamp). Rol deðiþince, þifre sýfýrlanýnca vb. Identity bunu yeniler.
+        // Her istekte token'daki damga veritabanýndakiyle karþýlaþtýrýlýr; farklýysa token reddedilir
+        // ? kiþinin oturumu düþer, yeniden girince güncel rolleriyle yeni token alýr.
+        claims.Add(new Claim("stamp", user.SecurityStamp ?? string.Empty));
+
         // 2) ROLLER: her rol ayrý bir claim olarak eklenir.
         //    RequireRole("Admin") gibi kurallar bu claim'lere bakarak karar verir.
         var roles = await _userManager.GetRolesAsync(user);

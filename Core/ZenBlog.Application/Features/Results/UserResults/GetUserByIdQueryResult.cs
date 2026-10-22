@@ -22,7 +22,8 @@ public record GetUserByIdQueryResult(Guid Id,
                                      int BlogCount,
                                      int CommentCount,
                                      List<UserRecentBlogResult> RecentBlogs,
-                                     List<UserBlockHistoryResult> BlockHistory);
+                                     List<UserBlockHistoryResult> BlockHistory,
+                                     List<UserRoleChangeResult> RoleHistory);   // YENÝ
 
 // Son bloglar listesi
 public record UserRecentBlogResult(Guid Id,
@@ -40,3 +41,10 @@ public record UserBlockHistoryResult(Guid Id,
                                      DateTime? UnblockedAt,
                                      string? UnblockedByAdminName,
                                      string? UnblockReason);
+
+// YENÝ: Rol geçmiþindeki her kayýt (en yeni en üstte)
+public record UserRoleChangeResult(Guid Id,
+                                   string RoleName,
+                                   bool IsAdded,
+                                   DateTime ChangedAt,
+                                   string ChangedByAdminName);

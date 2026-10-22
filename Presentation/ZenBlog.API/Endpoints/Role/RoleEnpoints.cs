@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
 using ZenBlog.Application.Features.Commands.RoleCommands;
 using ZenBlog.Application.Features.Queries.RoleQueries;
 using ZenBlog.Application.Features.Results.RoleResults;
@@ -10,7 +11,7 @@ public static class RoleEndpoints
 {
     public static void RegisterRoleEndpoints(this IEndpointRouteBuilder app)
     {
-        var roles = app.MapGroup("/roles").WithTags("Roles");
+        var roles = app.MapGroup("/roles").WithTags("Roles").RequireAuthorization(Policies.AdminOnly);
 
         // GET /api/roles
         roles.MapGet(string.Empty, async (IMediator mediator) =>
@@ -82,5 +83,9 @@ public static class RoleEndpoints
         })
         .Produces<BaseResult<object>>(StatusCodes.Status200OK)
         .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+
+
+
     }
 }

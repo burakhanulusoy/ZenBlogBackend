@@ -1,97 +1,93 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
+using ZenBlog.Application.Contracts.Infrastructure;
+using ZenBlog.Application.Contracts.Persistence;
 using ZenBlog.Application.Features.Commands.RoleCommands;
+using ZenBlog.Application.Services.MailServices;
 using ZenBlog.Domain.Entities;
 
 namespace ZenBlog.Application.Features.Handlers.RoleHandlers;
 
-// Admin ekranda iþaretlediði rollerin Id'lerini gönderir.
-// Handler kullanýcýnýn rollerini tam olarak bu listeye eþitler:
-// eksikleri ekler, fazlalarý çýkarýr, ortak olanlara dokunmaz.
-//
-// Aþaðýdaki örneklerde veritabanýnda þu roller olduðunu varsayýyoruz:
-//   Id: 111 ? Admin
-//   Id: 222 ? Writer
-//   Id: 333 ? User
 public class AssignRoleCommandHandler(UserManager<AppUser> _userManager,
-                                      RoleManager<AppRole> _roleManager)
+                                      RoleManager<AppRole> _roleManager,
+                                      IRepository<RoleChangeLog> _roleLogRepository,
+                                      ICurrentUserService _currentUser,
+                                      IAccountEmailService _accountEmailService)
     : IRequestHandler<AssignRoleCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(AssignRoleCommand request, CancellationToken cancellationToken)
     {
-        // ---------------------------------------------------------------
-        // 1) KULLANICIYI BUL
-        // ---------------------------------------------------------------
-        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+        // Ýþlemi yapan admin ? token'dan
+        if (_currentUser.UserId is null)
+            return BaseResult<object>.Fail("Kullanýcý bilgisi alýnamadý. Lütfen tekrar giriþ yapýn.");
 
+        var adminId = _currentUser.UserId.Value;
+
+        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
         if (user is null)
             return BaseResult<object>.Fail("Kullanýcý bulunamadý.");
 
-        // ---------------------------------------------------------------
-        // 2) TEKRAR EDEN ID'LERÝ AT (Distinct)
-        // ---------------------------------------------------------------
-        // Gönderilen: [222, 222] ? requestedIds: [222]
-        // Bu adým olmasaydý aþaðýdaki sayý kontrolü yanlýþ alarm verirdi:
-        //   gönderilen 2 Id, veritabanýnda bulunan 1 rol ? 2 ? 1 ? "rol bulunamadý" hatasý
-        //   (oysa Id geçerliydi, sadece iki kez yazýlmýþtý)
+        // 1) Ýstenen roller gerçekten var mý?
         var requestedIds = request.RoleIds.Distinct().ToList();
 
-        // ---------------------------------------------------------------
-        // 3) ID'LERÝ ROL ADLARINA ÇEVÝR
-        // ---------------------------------------------------------------
-        // Identity rol eklerken/çýkarýrken Id deðil AD istiyor (AddToRolesAsync(user, ["Admin"]) gibi).
-        // Adlarý istemciden deðil veritabanýndan aldýðýmýz için Identity'ye her zaman
-        // gerçekten var olan, doðru yazýlmýþ rol adlarý gidiyor.
-        //
-        // Where: veritabanýndaki her role (r) bakýp "Id'si gönderilen listede var mý?" diye soruyor.
-        // Örnek: requestedIds = [222, 333]
-        //   111 Admin  ? listede yok ? alýnmaz
-        //   222 Writer ? listede var ? alýnýr
-        //   333 User   ? listede var ? alýnýr
-        // Select: alýnan rollerden sadece ADLARINI al ? ["Writer", "User"]
         var selectedRoleNames = _roleManager.Roles
             .Where(r => requestedIds.Contains(r.Id))
             .Select(r => r.Name!)
             .ToList();
 
-        // ---------------------------------------------------------------
-        // 4) GÖNDERÝLEN ID'LERÝN HEPSÝ GERÇEK BÝR ROLE MÝ AÝT?
-        // ---------------------------------------------------------------
-        // Bunu sayýlarý karþýlaþtýrarak anlýyoruz:
-        //
-        // Doðru istek: requestedIds = [222, 333]
-        //   bulunan roller: ["Writer", "User"] ? 2 = 2 ? her Id gerçek bir role ait ?
-        //
-        // Hatalý istek: requestedIds = [222, 999]   (999 diye bir rol YOK)
-        //   999 veritabanýnda olmadýðý için Where onunla eþleþen satýr bulamaz
-        //   bulunan roller: ["Writer"] ? 2 ? 1 ? bir Id karþýlýksýz kaldý ?
-        //
-        // Bu kontrol olmasaydý 999 sessizce görmezden gelinir, sadece Writer atanýr ve
-        // "roller güncellendi" mesajý dönerdi; admin istediði rolü atadýðýný sanýrdý.
         if (selectedRoleNames.Count != requestedIds.Count)
             return BaseResult<object>.Fail("Gönderilen rollerden bazýlarý bulunamadý.");
 
-        // ---------------------------------------------------------------
-        // 5) MEVCUT ROLLER ÝLE ÝSTENEN ROLLERÝ KARÞILAÞTIR
-        // ---------------------------------------------------------------
-        // Kullanýcýnýn þu anki rolleri ? örn. ["Admin", "User"]
-        var currentRoles = await _userManager.GetRolesAsync(user);
+        // 2) YENÝ: User rolü herkeste kalýr (temel rol; listede yoksa biz ekliyoruz)
+        if (!selectedRoleNames.Contains(Roles.User))
+            selectedRoleNames.Add(Roles.User);
 
-        // Except: ilk listede olup ikinci listede OLMAYANLARI verir.
-        // Örnek: Ýstenen = [Writer, User], Mevcut = [Admin, User]
-        //
-        // rolesToAdd    = Ýstenen.Except(Mevcut) ? [Writer]  (istenmiþ ama kullanýcýda yok ? EKLE)
-        // rolesToRemove = Mevcut.Except(Ýstenen) ? [Admin]   (kullanýcýda var ama istenmiyor ? ÇIKAR)
-        // "User" iki listede de var ? ne eklenir ne çýkarýlýr, dokunulmaz
+        // 3) Ne eklenecek, ne alýnacak? (LINQ Except: birinde olup diðerinde olmayanlar)
+        var currentRoles = await _userManager.GetRolesAsync(user);
         var rolesToAdd = selectedRoleNames.Except(currentRoles).ToList();
         var rolesToRemove = currentRoles.Except(selectedRoleNames).ToList();
 
-        // ---------------------------------------------------------------
-        // 6) EKSÝK ROLLERÝ EKLE
-        // ---------------------------------------------------------------
-        // Identity hata durumunda exception deðil IdentityResult döner;
-        // bu yüzden sonucu MUTLAKA kontrol ediyoruz, yoksa hata sessizce yutulur.
+        if (rolesToAdd.Count == 0 && rolesToRemove.Count == 0)
+            return BaseResult<object>.Success("Rollerde deðiþiklik yapýlmadý.");
+
+        // 4) YENÝ: ADMÝN ROLÜNÜ ALMA KURALLARI
+        if (rolesToRemove.Contains(Roles.Admin))
+        {
+            if (user.Id == adminId)
+                return BaseResult<object>.Fail("Kendi yönetici rolünü kaldýramazsýn.");
+
+            var admins = await _userManager.GetUsersInRoleAsync(Roles.Admin);
+            if (admins.Count <= 1)
+                return BaseResult<object>.Fail("Sistemde en az bir yönetici kalmalý.");
+        }
+
+        // 5) YENÝ: ADMÝN ROLÜ VERÝLÝYORSA ? iþlemi yapan adminin þifresiyle onay
+        if (rolesToAdd.Contains(Roles.Admin))
+        {
+            var admin = await _userManager.FindByIdAsync(adminId.ToString());
+            if (admin is null || !await _userManager.HasPasswordAsync(admin))
+                return BaseResult<object>.Fail("AdminPassword",
+                    "Yönetici yetkisi vermek için hesabýnda bir þifre olmalý.");
+
+            if (await _userManager.IsLockedOutAsync(admin))
+                return BaseResult<object>.Fail("AdminPassword",
+                    "Çok fazla hatalý deneme yapýldý. Lütfen daha sonra tekrar dene.");
+
+            if (string.IsNullOrWhiteSpace(request.AdminPassword))
+                return BaseResult<object>.Fail("AdminPassword", "Yönetici yetkisi vermek için þifreni gir.");
+
+            if (!await _userManager.CheckPasswordAsync(admin, request.AdminPassword))
+            {
+                await _userManager.AccessFailedAsync(admin);
+                return BaseResult<object>.Fail("AdminPassword", "Þifre hatalý.");
+            }
+
+            await _userManager.ResetAccessFailedCountAsync(admin);
+        }
+
+        // 6) Rolleri uygula
         if (rolesToAdd.Count > 0)
         {
             var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
@@ -99,9 +95,6 @@ public class AssignRoleCommandHandler(UserManager<AppUser> _userManager,
                 return BaseResult<object>.Fail(addResult.Errors);
         }
 
-        // ---------------------------------------------------------------
-        // 7) FAZLA ROLLERÝ ÇIKAR
-        // ---------------------------------------------------------------
         if (rolesToRemove.Count > 0)
         {
             var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
@@ -109,6 +102,48 @@ public class AssignRoleCommandHandler(UserManager<AppUser> _userManager,
                 return BaseResult<object>.Fail(removeResult.Errors);
         }
 
-        return BaseResult<object>.Success("Kullanýcýnýn rolleri atandý.");
+        // 7) YENÝ: GEÇMÝÞ KAYITLARI
+        //    CreateAsync kayýtlarý sadece DbContext'e ekler; bir sonraki adýmdaki
+        //    UpdateSecurityStampAsync, SaveChanges çaðýrdýðý için hepsi birlikte yazýlýr.
+        var now = DateTime.Now;
+        foreach (var role in rolesToAdd)
+        {
+            await _roleLogRepository.CreateAsync(new RoleChangeLog
+            {
+                UserId = user.Id,
+                ChangedByAdminId = adminId,
+                RoleName = role,
+                IsAdded = true,
+                ChangedAt = now
+            });
+        }
+        foreach (var role in rolesToRemove)
+        {
+            await _roleLogRepository.CreateAsync(new RoleChangeLog
+            {
+                UserId = user.Id,
+                ChangedByAdminId = adminId,
+                RoleName = role,
+                IsAdded = false,
+                ChangedAt = now
+            });
+        }
+
+        // 8) YENÝ: Hesap damgasýný yenile ? kiþinin elindeki eski token geçersiz ? oturumu düþer
+        var stampResult = await _userManager.UpdateSecurityStampAsync(user);
+        if (!stampResult.Succeeded)
+            return BaseResult<object>.Fail(stampResult.Errors);
+
+        // 9) YENÝ: Bilgilendirme maili (gönderilemese bile rol deðiþikliði geçerli)
+        try
+        {
+            await _accountEmailService.SendRolesChangedAsync(user, rolesToAdd, rolesToRemove);
+        }
+        catch
+        {
+            // mail sunucusu hatasý iþlemi bozmasýn
+        }
+
+        return BaseResult<object>.Success("Kullanýcýnýn rolleri güncellendi.");
     }
 }

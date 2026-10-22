@@ -10,7 +10,13 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
 {
     // Tarihler Türkçe yazýlsýn: "21 Kasým 2026"
     private static readonly CultureInfo Turkish = new("tr-TR");
-
+    // Rol adlarýnýn Türkçesi (özel roller olduðu gibi yazýlýr)
+    private static readonly Dictionary<string, string> RoleLabels = new()
+    {
+        [Roles.Admin] = "Yönetici",
+        [Roles.Writer] = "Yazar",
+        [Roles.User] = "Okur"
+    };
     public Task SendClosureScheduledAsync(AppUser user, DateTime deadline)
     {
         var body = $"""
@@ -92,6 +98,76 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
 
         return _emailService.SendEmailAsync(user.Email!, subject, html);
     }
+    // YENÝ: rol deðiþikliði maili
+    public Task SendRolesChangedAsync(AppUser user, List<string> addedRoles, List<string> removedRoles)
+    {
+        string Label(string role) => WebUtility.HtmlEncode(RoleLabels.TryGetValue(role, out var label) ? label : role);
+
+        var added = addedRoles.Count == 0 ? "" :
+            $"<p><strong>Verilen rol:</strong> {string.Join(", ", addedRoles.Select(Label))}</p>";
+        var removed = removedRoles.Count == 0 ? "" :
+            $"<p><strong>Alýnan rol:</strong> {string.Join(", ", removedRoles.Select(Label))}</p>";
+
+        // Yazar yapýldýysa ona özel bir cümle
+        var writerNote = addedRoles.Contains(Roles.Writer)
+            ? "<p>Tebrikler! Artýk ZenBlog'da yazý yayýnlayabilirsin. Yazar paneline giriþ yaptýktan sonra ulaþabilirsin.</p>"
+            : "";
+
+        var body = $"""
+            <p>Hesabýndaki yetkiler bir yönetici tarafýndan güncellendi.</p>
+            {added}
+            {removed}
+            {writerNote}
+            <p>Güvenliðin için açýk oturumlarýn kapatýldý. Yeni yetkilerinle devam etmek için tekrar giriþ yapman yeterli.</p>
+            """;
+
+        return SendAsync(user, "ZenBlog - Rollerin güncellendi", "Rollerin güncellendi", body);
+    }
+
+
+
+    // YENÝ: YAZARLIK BAÞVURUSU MAÝLLERÝ
+    public Task SendWriterApplicationReceivedAsync(AppUser user)
+    {
+        var body = """
+            <p>Yazarlýk baþvurunu aldýk, teþekkür ederiz.</p>
+            <p>Ekibimiz baþvurunu inceleyecek ve sonucu sana e-posta ile bildireceðiz.
+               Baþvurunun durumunu panelindeki "Yazar ol" sayfasýndan da takip edebilirsin.</p>
+            """;
+
+        return SendAsync(user, "ZenBlog - Yazarlýk baþvurun alýndý", "Baþvurun alýndý", body);
+    }
+
+    public Task SendWriterApplicationApprovedAsync(AppUser user)
+    {
+        var body = """
+            <p><strong>Tebrikler!</strong> Yazarlýk baþvurun onaylandý, artýk bir ZenBlog yazarýsýn.</p>
+            <p>Güvenliðin için açýk oturumlarýn kapatýldý. Tekrar giriþ yaptýðýnda doðrudan
+               yazar paneline yönlendirileceksin ve ilk yazýný yayýnlayabileceksin.</p>
+            <p>Seni aramýzda görmekten mutluluk duyuyoruz.</p>
+            """;
+
+        return SendAsync(user, "ZenBlog - Artýk yazarsýn!", "Baþvurun onaylandý", body);
+    }
+
+    public Task SendWriterApplicationRejectedAsync(AppUser user, string reason, DateTime reapplyAt)
+    {
+        var body = $"""
+            <p>Yazarlýk baþvurunu dikkatle inceledik; ancak bu kez olumlu sonuçlandýramadýk.</p>
+            <p><strong>Deðerlendirme notu:</strong></p>
+            <blockquote style="margin:0 0 16px;padding:12px 16px;border-left:4px solid #d97706;background:#fffbeb;color:#78350f;">
+                {WebUtility.HtmlEncode(reason)}
+            </blockquote>
+            <p><strong>{FormatDate(reapplyAt)}</strong> tarihinden sonra yeniden baþvurabilirsin.
+               Bu süreyi okumak, yorum yapmak ve kendini geliþtirmek için deðerlendirebilirsin.</p>
+            """;
+
+        return SendAsync(user, "ZenBlog - Yazarlýk baþvurun hakkýnda", "Baþvurun deðerlendirildi", body);
+    }
+
+
+
+
 
     private static string FormatDate(DateTime date) => date.ToString("d MMMM yyyy", Turkish);
 }
