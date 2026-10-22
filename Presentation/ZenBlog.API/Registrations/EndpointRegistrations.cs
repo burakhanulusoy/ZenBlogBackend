@@ -5,6 +5,7 @@ using ZenBlog.API.Endpoints.Comment;
 using ZenBlog.API.Endpoints.Contact;
 using ZenBlog.API.Endpoints.ContactMessage;
 using ZenBlog.API.Endpoints.Role;
+using ZenBlog.API.Endpoints.SocialMedia;
 using ZenBlog.API.Endpoints.SubComment;
 using ZenBlog.API.Endpoints.User;
 using ZenBlog.API.Endpoints.WriterApplication;
@@ -25,7 +26,8 @@ namespace ZenBlog.API.Registrations
             app.RegisterContactMessageEndpoints();
             app.RegisterAboutEndpoints();
             app.RegisterRoleEndpoints();
-            app.RegisterWriterApplicationEndpoints(); 
+            app.RegisterWriterApplicationEndpoints();
+            app.RegisterSocialMediaEndpoint();
         }
 
 

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ZenBlog.Application.Base;
+using ZenBlog.Application.Constants;
 using ZenBlog.Application.Features.Commands.AboutCommands;
 using ZenBlog.Application.Features.Queries.AboutQueries;
 using ZenBlog.Application.Features.Results.AboutResults;
@@ -36,6 +37,7 @@ public static class AboutEndpoints
             var response = await mediator.Send(command);
             return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
         })
+        .RequireAuthorization(Policies.AdminOnly)   // YENİ: sadece Admin ekler/günceller/siler
         .DisableAntiforgery() // Form-data endpoint'i; API olduğumuz ve JWT kullanacağımız için CSRF token'ı gerekmiyor
         .Produces(StatusCodes.Status200OK)
         .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
@@ -46,6 +48,7 @@ public static class AboutEndpoints
             var response = await mediator.Send(command);
             return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
         })
+                    .RequireAuthorization(Policies.AdminOnly)   // YENİ: sadece Admin ekler/günceller/siler
         .DisableAntiforgery()
         .Produces(StatusCodes.Status200OK)
         .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
@@ -56,6 +59,7 @@ public static class AboutEndpoints
             var response = await mediator.Send(new RemoveAboutCommand(id));
             return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
         })
+                    .RequireAuthorization(Policies.AdminOnly)   // YENİ: sadece Admin ekler/günceller/siler
         .Produces(StatusCodes.Status200OK)
         .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
     }

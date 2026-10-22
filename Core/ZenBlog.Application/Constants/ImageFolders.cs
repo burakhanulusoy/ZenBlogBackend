@@ -10,6 +10,7 @@ public static class ImageFolders
     public const string Teams = "teams";
     public const string Abouts = "abouts";
     public const string Blocks = "blocks";   //blog gerekçeli 
+    public const string SocialMedias = "social-medias";   // YENÝ: sosyal medya ikonlarý
 
-    public static readonly string[] All = [Blogs, Users, Categories, Teams, Abouts,Blocks];
+    public static readonly string[] All = [Blogs, Users, Categories, Teams, Abouts,Blocks,SocialMedias];
 }
