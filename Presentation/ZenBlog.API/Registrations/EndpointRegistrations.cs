@@ -7,6 +7,7 @@ using ZenBlog.API.Endpoints.ContactMessage;
 using ZenBlog.API.Endpoints.Role;
 using ZenBlog.API.Endpoints.SocialMedia;
 using ZenBlog.API.Endpoints.SubComment;
+using ZenBlog.API.Endpoints.Team;
 using ZenBlog.API.Endpoints.User;
 using ZenBlog.API.Endpoints.WriterApplication;
 
@@ -28,6 +29,7 @@ namespace ZenBlog.API.Registrations
             app.RegisterRoleEndpoints();
             app.RegisterWriterApplicationEndpoints();
             app.RegisterSocialMediaEndpoint();
+            app.RegisterTeamEndpoints();
         }
 
 
