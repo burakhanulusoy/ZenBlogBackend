@@ -22,6 +22,8 @@ namespace ZenBlog.API.Endpoints.SocialMedia
                 var response = await mediator.Send(new GetSocialMediasQuery());
                 return Results.Ok(response);
             })
+            .AllowAnonymous()
+
             .Produces<BaseResult<List<GetSocialMediasQueryResult>>>(StatusCodes.Status200OK);
 
             // GET /api/social-medias/{id}
@@ -31,6 +33,8 @@ namespace ZenBlog.API.Endpoints.SocialMedia
                 var response = await mediator.Send(new GetSocialMediaByIdQuery(id));
                 return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
             })
+            .AllowAnonymous()
+
             .Produces<BaseResult<GetSocialMediaByIdQueryResult>>(StatusCodes.Status200OK)
             .Produces<BaseResult<GetSocialMediaByIdQueryResult>>(StatusCodes.Status404NotFound);
 

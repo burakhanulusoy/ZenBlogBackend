@@ -23,7 +23,9 @@ namespace ZenBlog.API.Endpoints.Comment
 
                 return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
 
-            });
+            })
+            .AllowAnonymous()
+                ;
 
 
             comments.MapPost(string.Empty, async (IMediator mediator , CreateCommentCommand command) =>

@@ -21,6 +21,8 @@ public static class TeamEndpoints
             var response = await mediator.Send(new GetTeamsQuery());
             return Results.Ok(response);
         })
+            .AllowAnonymous()
+
         .Produces<BaseResult<List<GetTeamsQueryResult>>>(StatusCodes.Status200OK);
 
         // Seçilebilir platformlar
@@ -29,6 +31,8 @@ public static class TeamEndpoints
             var response = await mediator.Send(new GetTeamSocialPlatformsQuery());
             return Results.Ok(response);
         })
+            .AllowAnonymous()
+
         .Produces<BaseResult<List<GetTeamSocialPlatformsQueryResult>>>(StatusCodes.Status200OK);
 
         teams.MapGet("{id:guid}", async (IMediator mediator, Guid id) =>
@@ -36,6 +40,8 @@ public static class TeamEndpoints
             var response = await mediator.Send(new GetTeamByIdQuery(id));
             return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
         })
+            .AllowAnonymous()
+
         .Produces<BaseResult<GetTeamByIdQueryResult>>(StatusCodes.Status200OK)
         .Produces<BaseResult<GetTeamByIdQueryResult>>(StatusCodes.Status404NotFound);
 

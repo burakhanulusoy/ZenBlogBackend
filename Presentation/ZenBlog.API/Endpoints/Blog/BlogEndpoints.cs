@@ -9,12 +9,23 @@ using ZenBlog.Application.Features.Results.BlogResults;
 
 namespace ZenBlog.API.Endpoints.Blog
 {
+    // =====================================================================
+    // BLOGLAR → /api/blogs
+    //   Okuma (GET)       → HERKESE AÇIK (ziyaretçi sitesi)
+    //   Ekle/güncelle/sil → sadece Writer ya da Admin
+    //   my                → giriş yapan yazarın kendi blogları
+    // Program.cs'teki /api grubu varsayılan olarak "giriş şart" diyor;
+    // AllowAnonymous sadece eklendiği uçta bu kuralı kaldırıyor.
+    // =====================================================================
     public static class BlogEndpoints
     {
         public static void RegisterBlogEndpoints(this IEndpointRouteBuilder app)
         {
-            //tümünü alma endpointisin
-            var blogs = app.MapGroup("/blogs").WithTags("Blogs");//.RequireAuthorization();
+            var blogs = app.MapGroup("/blogs").WithTags("Blogs");
+
+            // ---------------------------------------------------------------
+            // OKUMA (herkese açık)
+            // ---------------------------------------------------------------
 
             // GET /api/blogs → tüm bloglar
             blogs.MapGet(string.Empty, async (IMediator mediator) =>
@@ -22,82 +33,37 @@ namespace ZenBlog.API.Endpoints.Blog
                 var response = await mediator.Send(new GetBlogsQuery());
                 return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
             })
+            .AllowAnonymous()   // YENİ
             .Produces<BaseResult<List<GetBlogsQueryResult>>>(StatusCodes.Status200OK)
             .Produces<BaseResult<List<GetBlogsQueryResult>>>(StatusCodes.Status400BadRequest);
-            // .RequireAuthorization();
-            // bunu yaptıktan sonra 401 unothorizated hatası alır cunku arıtık korumalı bura
-            // giriş yapmış tokenı olmayanlar ıcın hatalı lakın gırııs yapıca token lusacak zaten onun ıcın hata vereycek ılerde bırde admın role gore olacak
-
-
 
             // GET /api/blogs/{id} → tek blog, bulunamazsa 404
-            blogs.MapGet("{id}", async (IMediator mediator, Guid id) =>
+            blogs.MapGet("{id:guid}", async (IMediator mediator, Guid id) =>
             {
                 var response = await mediator.Send(new GetBlogByIdQuery(id));
                 return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
             })
+            .AllowAnonymous()   // YENİ
             .Produces<BaseResult<GetBlogByIdQueryResult>>(StatusCodes.Status200OK)
             .Produces<BaseResult<GetBlogByIdQueryResult>>(StatusCodes.Status404NotFound);
 
-            // POST /api/blogs → yeni blog (form-data: yazı alanları + 3 resim)
-            blogs.MapPost(string.Empty, async ([FromForm] CreateBlogCommand command, IMediator mediator) =>
-            {
-                var response = await mediator.Send(command);
-                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
-            })
-// DisableAntiforgery:
-// .NET 8+ minimal API, form-data alan endpoint'lerde (dosya yükleme, [FromForm])
-// CSRF saldırısına karşı otomatik olarak "antiforgery token" bekler.
-// CSRF: Kullanıcı sitemize giriş yapmışken başka bir sitenin, tarayıcının
-// otomatik gönderdiği çerezi (cookie) kullanarak onun adına istek atmasıdır.
-// Bizim API'miz form sayfası üretmediği için bu token'ı kimseye vermiyor;
-// koruma açık kalırsa her istek "token yok" diye 400 ile reddedilir.
-// JWT, çerezle değil isteğin header'ına elle eklenerek gönderildiği için
-// CSRF riski zaten oluşmaz; bu yüzden JWT kullanan API'lerde kapatılması standarttır.
-.DisableAntiforgery()
-            .DisableAntiforgery()
-            .Produces(StatusCodes.Status200OK)
-            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
-
-
-
-
-            // PUT /api/blogs → güncelleme (form-data: seçilmeyen resimler eski haliyle kalır)
-            blogs.MapPut(string.Empty, async ([FromForm] UpdateBlogCommand command, IMediator mediator) =>
-            {
-                var response = await mediator.Send(command);
-                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
-            })
-            .DisableAntiforgery()
-            .Produces(StatusCodes.Status200OK)
-            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
-
-            // DELETE /api/blogs/{id}
-            blogs.MapDelete("{id}", async (IMediator mediator, Guid id) =>
-            {
-                var response = await mediator.Send(new RemoveBlogCommand(id));
-                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
-            })
-            .Produces(StatusCodes.Status200OK)
-            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
-
-
-            //getblogsbycategoryId
-            blogs.MapGet("byCategoryId/{categoryId}", async (IMediator mediator , Guid categoryId) =>
+            // GET /api/blogs/byCategoryId/{categoryId} → bir kategorinin blogları
+            blogs.MapGet("byCategoryId/{categoryId:guid}", async (IMediator mediator, Guid categoryId) =>
             {
                 var response = await mediator.Send(new GetBlogsByCategoryIdQuery(categoryId));
-
                 return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
-            });
+            })
+            .AllowAnonymous()   // YENİ
+            .Produces<BaseResult<List<GetBlogsByCategoryIdQueryResult>>>(StatusCodes.Status200OK);
 
-            //getblogsbyuserId
-            blogs.MapGet("byUserId/{userId}", async (IMediator mediator, Guid userId) =>
+            // GET /api/blogs/byUserId/{userId} → bir yazarın blogları (yazar sayfası için)
+            blogs.MapGet("byUserId/{userId:guid}", async (IMediator mediator, Guid userId) =>
             {
                 var response = await mediator.Send(new GetBlogsByUserIdQuery(userId));
-
                 return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
-            });
-
+            })
+            .AllowAnonymous()   // YENİ
+            .Produces<BaseResult<List<GetBlogsByUserIdQueryResult>>>(StatusCodes.Status200OK);
 
             // GET /api/blogs/my → giriş yapan yazarın kendi blogları
             // Kullanıcı Id'si istekten DEĞİL token'dan; kimse başkasının listesini "kendi listesi" gibi çekemez
@@ -106,8 +72,56 @@ namespace ZenBlog.API.Endpoints.Blog
                 var response = await mediator.Send(new GetBlogsByUserIdQuery(currentUser.UserId!.Value));
                 return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
             })
-            .RequireAuthorization(Policies.WriterOrAdmin);
+            .RequireAuthorization(Policies.WriterOrAdmin)
+            .Produces<BaseResult<List<GetBlogsByUserIdQueryResult>>>(StatusCodes.Status200OK);
 
+            // ---------------------------------------------------------------
+            // YAZMA (sadece Writer ya da Admin)
+            // ---------------------------------------------------------------
+
+            // POST /api/blogs → yeni blog (form-data: yazı alanları + 3 resim)
+            blogs.MapPost(string.Empty, async ([FromForm] CreateBlogCommand command, IMediator mediator) =>
+            {
+                var response = await mediator.Send(command);
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            // DisableAntiforgery:
+            // .NET 8+ minimal API, form-data alan endpoint'lerde (dosya yükleme, [FromForm])
+            // CSRF saldırısına karşı otomatik olarak "antiforgery token" bekler.
+            // CSRF: Kullanıcı sitemize giriş yapmışken başka bir sitenin, tarayıcının
+            // otomatik gönderdiği çerezi (cookie) kullanarak onun adına istek atmasıdır.
+            // Bizim API'miz form sayfası üretmediği için bu token'ı kimseye vermiyor;
+            // koruma açık kalırsa her istek "token yok" diye 400 ile reddedilir.
+            // JWT, çerezle değil isteğin header'ına elle eklenerek gönderildiği için
+            // CSRF riski zaten oluşmaz; bu yüzden JWT kullanan API'lerde kapatılması standarttır.
+            .DisableAntiforgery()
+            .RequireAuthorization(Policies.WriterOrAdmin)   // YENİ: User blog ekleyemez
+            .Produces(StatusCodes.Status200OK)
+            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+            // PUT /api/blogs → güncelleme (form-data: seçilmeyen resimler eski haliyle kalır)
+            blogs.MapPut(string.Empty, async ([FromForm] UpdateBlogCommand command, IMediator mediator) =>
+            {
+                var response = await mediator.Send(command);
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            .DisableAntiforgery()
+            .RequireAuthorization(Policies.WriterOrAdmin)   // YENİ
+            .Produces(StatusCodes.Status200OK)
+            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+            // DELETE /api/blogs/{id}
+            blogs.MapDelete("{id:guid}", async (IMediator mediator, Guid id) =>
+            {
+                var response = await mediator.Send(new RemoveBlogCommand(id));
+                return response.IsSuccessful ? Results.Ok(response) : Results.BadRequest(response);
+            })
+            .RequireAuthorization(Policies.WriterOrAdmin)   // YENİ
+            .Produces(StatusCodes.Status200OK)
+            .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+            // NOT (TODO): "Sadece kendi blogunu güncelleyip silebilir" (sahiplik) kontrolü
+            // handler'larda ayrıca yapılacak. Şu an Writer başkasının blogunun Id'sini bilirse değiştirebilir.
         }
     }
 }

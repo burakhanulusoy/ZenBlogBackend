@@ -17,6 +17,8 @@ public static class SubCommentEndpoints
             var response = await mediator.Send(new GetSubCommentsByCommentIdQuery(commentId));
             return Results.Ok(response);
         })
+            .AllowAnonymous()
+
         .Produces<BaseResult<List<GetSubCommentsByCommentIdQueryResult>>>(StatusCodes.Status200OK);
 
         subComments.MapGet("byUserId/{userId:guid}", async (IMediator mediator, Guid userId) =>

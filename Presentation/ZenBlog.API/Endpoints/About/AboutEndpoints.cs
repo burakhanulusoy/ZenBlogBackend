@@ -20,6 +20,7 @@ public static class AboutEndpoints
             var response = await mediator.Send(new GetAboutsQuery());
             return Results.Ok(response);
         })
+            .AllowAnonymous()
         .Produces<BaseResult<List<GetAboutsQueryResult>>>(StatusCodes.Status200OK);
 
         // GET /api/abouts/{id}
@@ -28,6 +29,7 @@ public static class AboutEndpoints
             var response = await mediator.Send(new GetAboutByIdQuery(id));
             return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
         })
+            .AllowAnonymous()
         .Produces<BaseResult<GetAboutByIdQueryResult>>(StatusCodes.Status200OK)
         .Produces<BaseResult<GetAboutByIdQueryResult>>(StatusCodes.Status404NotFound);
 

@@ -53,7 +53,7 @@ namespace ZenBlog.Persistence.Extensions
             }).AddEntityFrameworkStores<AppDbContext>()
             .AddErrorDescriber<CustomErrorDescriber>()
             .AddDefaultTokenProviders();
-
+            services.AddScoped<IHomeReadService, HomeReadService>();   // YENÝ: ana sayfa sorgularý
 
             services.AddScoped<IAccountContentService, AccountContentService>();   // YENÝ: hesap iþlemlerinde içerik gizle/aç
 

@@ -7,10 +7,13 @@ public class CreateContactValidator : AbstractValidator<CreateContactCommand>
 {
     public CreateContactValidator()
     {
+        // DEÐÝÞTÝ: Sadece Google Haritalar "yerleþtir" adresi kabul ediliyor.
+        // Bu adres sitede <iframe> içinde gösteriliyor; rastgele bir adres kabul edilirse
+        // sitemizin içine baþka bir sitenin sayfasý yerleþtirilebilir.
         RuleFor(x => x.MapLocationUrl)
-            .NotEmpty().WithMessage("Harita konum adresi boþ olamaz.")
-            .MaximumLength(2000).WithMessage("Harita konum adresi en fazla 2000 karakter olabilir.")
-            .Must(BeAValidUrl).WithMessage("Geçerli bir harita adresi giriniz (http veya https ile baþlamalý).");
+            .NotEmpty().WithMessage("Harita adresi boþ olamaz.")
+            .MaximumLength(2000).WithMessage("Harita adresi en fazla 2000 karakter olabilir.")
+            .Must(BeGoogleMapsEmbed).WithMessage("Google Haritalar'daki 'Haritayý yerleþtir' adresini gir (https://www.google.com/maps/embed?... ile baþlamalý).");
 
         RuleFor(x => x.Address)
             .NotEmpty().WithMessage("Adres boþ olamaz.")
@@ -26,9 +29,6 @@ public class CreateContactValidator : AbstractValidator<CreateContactCommand>
     }
 
     // Adres gerçekten http/https ile baþlayan geçerli bir URL mi?
-    private static bool BeAValidUrl(string? url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
-               && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
-    }
+    private static bool BeGoogleMapsEmbed(string? url) =>
+    url is not null && url.StartsWith("https://www.google.com/maps/embed", StringComparison.OrdinalIgnoreCase);
 }
