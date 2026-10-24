@@ -13,6 +13,11 @@ namespace ZenBlog.Infrastructure.Services.Azure
         // Uzantýdan dosya türünü (image/jpeg gibi) bulmak için ASP.NET Core'un hazýr aracý
         private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
 
+        // YENÝ: Tarayýcý dosyayý 1 yýl saklasýn (her ziyarette baþtan indirmesin).
+        // "immutable": dosya adý Guid olduðu için ayný adresteki içerik HÝÇ deðiþmez;
+        // resim deðiþince zaten yeni bir adres (yeni Guid) oluþuyor. Bu yüzden uzun süre saklamak güvenli.
+        private const string CacheControl = "public, max-age=31536000, immutable";
+
         public AzureBlobFileService(BlobServiceClient blobServiceClient,
                                     IOptions<AzureBlobStorageSettings> options)
         {
@@ -33,10 +38,17 @@ namespace ZenBlog.Infrastructure.Services.Azure
             if (!ContentTypeProvider.TryGetContentType(fileName, out var contentType))
                 contentType = "application/octet-stream";
 
-            // 3) Yükle
+            // 3) Yükle (DEÐÝÞTÝ: CacheControl eklendi)
             var blobClient = _container.GetBlobClient(blobName);
             await blobClient.UploadAsync(fileStream,
-                new BlobUploadOptions { HttpHeaders = new BlobHttpHeaders { ContentType = contentType } },
+                new BlobUploadOptions
+                {
+                    HttpHeaders = new BlobHttpHeaders
+                    {
+                        ContentType = contentType,
+                        CacheControl = CacheControl   // YENÝ: tarayýcý önbelleði
+                    }
+                },
                 cancellationToken);
 
             // 4) Tam adresi dön: https://zenblogstorage2026.blob.core.windows.net/images/blogs/2026/10/....jpg
