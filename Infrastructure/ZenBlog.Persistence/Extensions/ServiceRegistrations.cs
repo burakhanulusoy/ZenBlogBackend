@@ -53,10 +53,19 @@ namespace ZenBlog.Persistence.Extensions
             }).AddEntityFrameworkStores<AppDbContext>()
             .AddErrorDescriber<CustomErrorDescriber>()
             .AddDefaultTokenProviders();
+
+
+
             services.AddScoped<IHomeReadService, HomeReadService>();   // YENÝ: ana sayfa sorgularý
-
+            
+            services.AddScoped<ICommentReadService, CommentReadService>();   // YENÝ: blog yorumlarý
+          
             services.AddScoped<IAccountContentService, AccountContentService>();   // YENÝ: hesap iþlemlerinde içerik gizle/aç
-
+         
+            services.AddScoped<IBlogReadService, BlogReadService>();   // YENÝ: kategori sayfasý, ilgili yazýlar
+          
+            
+            
             return services;
         }
 

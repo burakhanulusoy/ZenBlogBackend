@@ -11,19 +11,13 @@ public class CommentMapping : Profile
     {
         CreateMap<CreateCommentCommand, Comment>();
 
-        // Alt yorumlar da eskiden yeniye sýralý gelsin
-        CreateMap<Comment, GetCommentsByBlogIdQueryResult>()
-            .ForCtorParam(nameof(GetCommentsByBlogIdQueryResult.SubComments),
-                          opt => opt.MapFrom(src => src.SubComments.OrderBy(s => s.CreatedAt)));
+        // DEÐÝÞTÝ: GetCommentsByBlogIdQueryResult ve CommentSubCommentResult eþlemeleri kaldýrýldý
+        // (blog yorumlarý artýk CommentReadService'te projeksiyonla oluþturuluyor).
+        // Kalsaydý ForCtorParam artýk olmayan bir alaný aradýðý için uygulama açýlýrken hata verirdi.
 
-        CreateMap<SubComment, CommentSubCommentResult>();
-
-        // BlogMainTitle entity'de doðrudan yok; yorumun baðlý olduðu blogun baþlýðýndan alýyoruz
         CreateMap<Comment, GetCommentsByUserIdQueryResult>()
             .ForCtorParam(nameof(GetCommentsByUserIdQueryResult.BlogMainTitle),
                           opt => opt.MapFrom(src => src.Blog.MainTitle));
-
-
 
         CreateMap<Comment, GetCommentByIdQueryResult>();
     }

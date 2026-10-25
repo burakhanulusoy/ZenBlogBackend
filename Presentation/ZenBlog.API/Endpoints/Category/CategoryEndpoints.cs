@@ -2,7 +2,9 @@
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;   // YENİ: Policies
 using ZenBlog.Application.Features.Commands.CategoryCommands;
+using ZenBlog.Application.Features.Queries.BlogQueries;
 using ZenBlog.Application.Features.Queries.CategoryQueries;
+using ZenBlog.Application.Features.Results.BlogResults;
 using ZenBlog.Application.Features.Results.CategoryResults;
 
 namespace ZenBlog.API.Endpoints.Category;
@@ -85,5 +87,16 @@ public static class CategoryEndpoints
         .RequireAuthorization(Policies.AdminOnly)   // YENİ
         .Produces<BaseResult<object>>(StatusCodes.Status200OK)
         .Produces<BaseResult<object>>(StatusCodes.Status400BadRequest);
+
+
+        // YENİ: GET /api/categories/{id}/blogs?page=1&pageSize=9 → kategori sayfası (herkese açık)
+        categories.MapGet("{id:guid}/blogs", async (IMediator mediator, Guid id, int? page, int? pageSize) =>
+        {
+            var response = await mediator.Send(new GetCategoryPageQuery(id, page ?? 1, pageSize ?? 9));
+            return response.IsSuccessful ? Results.Ok(response) : Results.NotFound(response);
+        })
+        .AllowAnonymous()
+        .Produces<BaseResult<CategoryPageResult>>(StatusCodes.Status200OK)
+        .Produces<BaseResult<CategoryPageResult>>(StatusCodes.Status404NotFound);
     }
 }

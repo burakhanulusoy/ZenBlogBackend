@@ -6,6 +6,7 @@ using ZenBlog.Application.Contracts.Infrastructure;
 using ZenBlog.Application.Features.Commands.BlogCommands;
 using ZenBlog.Application.Features.Queries.BlogQueries;
 using ZenBlog.Application.Features.Results.BlogResults;
+using ZenBlog.Application.Features.Results.HomeResults;
 
 namespace ZenBlog.API.Endpoints.Blog
 {
@@ -122,6 +123,17 @@ namespace ZenBlog.API.Endpoints.Blog
 
             // NOT (TODO): "Sadece kendi blogunu güncelleyip silebilir" (sahiplik) kontrolü
             // handler'larda ayrıca yapılacak. Şu an Writer başkasının blogunun Id'sini bilirse değiştirebilir.
+
+
+            // YENİ: GET /api/blogs/{id}/related?count=3 → ilgili yazılar (herkese açık)
+            blogs.MapGet("{id:guid}/related", async (IMediator mediator, Guid id, int? count) =>
+            {
+                var response = await mediator.Send(new GetRelatedBlogsQuery(id, count ?? 3));
+                return Results.Ok(response);
+            })
+            .AllowAnonymous()
+            .Produces<BaseResult<List<HomeBlogResult>>>(StatusCodes.Status200OK);
+
         }
     }
 }
