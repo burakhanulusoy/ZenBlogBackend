@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
@@ -14,12 +15,13 @@ public class AssignRoleCommandHandler(UserManager<AppUser> _userManager,
                                       RoleManager<AppRole> _roleManager,
                                       IRepository<RoleChangeLog> _roleLogRepository,
                                       ICurrentUserService _currentUser,
-                                      IAccountEmailService _accountEmailService)
+                                      IAccountEmailService _accountEmailService,
+                                      ILogger<AssignRoleCommandHandler> _logger)   // DEÐÝÞTÝ: logu yazan sýnýf
     : IRequestHandler<AssignRoleCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(AssignRoleCommand request, CancellationToken cancellationToken)
     {
-        // Ýþlemi yapan admin ? token'dan
+        // Ýþlemi yapan admin -> token'dan
         if (_currentUser.UserId is null)
             return BaseResult<object>.Fail("Kullanýcý bilgisi alýnamadý. Lütfen tekrar giriþ yapýn.");
 
@@ -63,7 +65,7 @@ public class AssignRoleCommandHandler(UserManager<AppUser> _userManager,
                 return BaseResult<object>.Fail("Sistemde en az bir yönetici kalmalý.");
         }
 
-        // 5) YENÝ: ADMÝN ROLÜ VERÝLÝYORSA ? iþlemi yapan adminin þifresiyle onay
+        // 5) YENÝ: ADMÝN ROLÜ VERÝLÝYORSA -> iþlemi yapan adminin þifresiyle onay
         if (rolesToAdd.Contains(Roles.Admin))
         {
             var admin = await _userManager.FindByIdAsync(adminId.ToString());
@@ -129,12 +131,19 @@ public class AssignRoleCommandHandler(UserManager<AppUser> _userManager,
             });
         }
 
-        // 8) YENÝ: Hesap damgasýný yenile ? kiþinin elindeki eski token geçersiz ? oturumu düþer
+        // 8) YENÝ: Hesap damgasýný yenile -> kiþinin elindeki eski token geçersiz -> oturumu düþer
         var stampResult = await _userManager.UpdateSecurityStampAsync(user);
         if (!stampResult.Succeeded)
             return BaseResult<object>.Fail(stampResult.Errors);
 
+        // LOG: Yetki deðiþikliði her zaman izlenmeli -> Warning seviyesinde.
+        // Eklenen ve alýnan roller AYRI alanlarda; iþlemi yapan admin (UserId) LoggingBehavior'dan otomatik gelir.
+        _logger.LogWarning("{EventType}: Roller deðiþti. Hedef: {TargetUserId}, Eklenen: {AddedRoles}, Alýnan: {RemovedRoles}",
+                           LogEvents.RoleChanged, user.Id,
+                           string.Join(",", rolesToAdd), string.Join(",", rolesToRemove));
+
         // 9) YENÝ: Bilgilendirme maili (gönderilemese bile rol deðiþikliði geçerli)
+        //    Gönderilemezse hata AccountEmailService içinde EmailFailed olarak loglanýr.
         try
         {
             await _accountEmailService.SendRolesChangedAsync(user, rolesToAdd, rolesToRemove);

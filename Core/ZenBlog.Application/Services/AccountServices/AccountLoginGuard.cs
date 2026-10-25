@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;   // YENÝ
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Persistence;
 using ZenBlog.Domain.Entities;
@@ -7,7 +8,8 @@ using ZenBlog.Domain.Enums;
 namespace ZenBlog.Application.Services.AccountServices;
 
 public class AccountLoginGuard(UserManager<AppUser> _userManager,
-                               IAccountContentService _accountContentService) : IAccountLoginGuard
+                               IAccountContentService _accountContentService,
+                               ILogger<AccountLoginGuard> _logger) : IAccountLoginGuard   // YENÝ
 {
     public async Task<AccountLoginState> CheckAsync(AppUser user, CancellationToken cancellationToken)
     {
@@ -25,7 +27,7 @@ public class AccountLoginGuard(UserManager<AppUser> _userManager,
                 if (deadline is null || DateTime.Now >= deadline)
                     return AccountLoginState.Closed;
 
-                // Süre dolmadan geri döndü ? kapatmayý iptal et
+                // Süre dolmadan geri döndü -> kapatmayý iptal et
                 user.AccountStatus = AccountStatus.Active;
                 user.DeletionRequestedAt = null;
                 user.DeletionReminderSentAt = null;
@@ -36,6 +38,11 @@ public class AccountLoginGuard(UserManager<AppUser> _userManager,
 
                 // Önce durum Active yapýldý, SONRA içerikler geri açýlýyor (sýra önemli, bkz. arayüz)
                 await _accountContentService.RestoreContentAsync(user.Id, cancellationToken);
+
+                // LOG: YENÝ
+                _logger.LogInformation("{EventType}: Kullanýcý geri döndü, hesap kapatma iptal edildi. Kullanýcý: {TargetUserId}",
+                                       LogEvents.AccountReactivated, user.Id);
+
                 return AccountLoginState.Reactivated;
 
             default:

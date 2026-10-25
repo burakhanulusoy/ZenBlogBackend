@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ZenBlog.Application.Base;
 
-public class BaseResult<T>
+public class BaseResult<T> :IBaseResult
 {
     //iþlem baþarýlýysa dönecek veri
     //hata durumunda veri olmayabýlýr null olabilir

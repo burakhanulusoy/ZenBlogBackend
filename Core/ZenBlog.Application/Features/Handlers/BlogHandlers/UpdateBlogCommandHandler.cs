@@ -14,7 +14,8 @@ public class UpdateBlogCommandHandler(IRepository<Blog> _repository,
                                       IUnitOfWork _unitOfWork,
                                       IRepository<Category> _categoryRepository,
                                       IMapper _mapper,
-                                      IFileService _fileService)
+                                      IFileService _fileService,
+                                      ICurrentUserService _currentUser)
     : IRequestHandler<UpdateBlogCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(UpdateBlogCommand request, CancellationToken cancellationToken)
@@ -24,11 +25,21 @@ public class UpdateBlogCommandHandler(IRepository<Blog> _repository,
         if (blog is null)
             return BaseResult<object>.Fail("Bu Id'ye sahip blog bulunamadý.");
 
+        // SAHÝPLÝK: sadece kendi blogunu düzenleyebilir
+        if (_currentUser.UserId is null)
+            return BaseResult<object>.Fail("Kullanýcý bilgisi alýnamadý. Lütfen tekrar giriþ yapýn.");
+
+        if (blog.AppUserId != _currentUser.UserId.Value)
+            return BaseResult<object>.Fail("Sadece kendi blogunu düzenleyebilirsin.");
+
         // Kategori gerçekten var mý? (resim yüklemeden önce)
         var category = await _categoryRepository.GetByIdAsync(request.CategoryId!.Value);
 
         if (category is null)
             return BaseResult<object>.Fail("Seçilen kategori bulunamadý.");
+
+
+
 
         _mapper.Map(request, blog);
 

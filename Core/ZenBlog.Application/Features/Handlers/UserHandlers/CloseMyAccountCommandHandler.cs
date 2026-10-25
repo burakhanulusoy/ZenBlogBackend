@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;   // YENÝ
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
@@ -15,12 +16,13 @@ namespace ZenBlog.Application.Features.Handlers.UserHandlers;
 public class CloseMyAccountCommandHandler(UserManager<AppUser> _userManager,
                                           ICurrentUserService _currentUser,
                                           IAccountContentService _accountContentService,
-                                          IAccountEmailService _accountEmailService)
+                                          IAccountEmailService _accountEmailService,
+                                          ILogger<CloseMyAccountCommandHandler> _logger)   // YENÝ
     : IRequestHandler<CloseMyAccountCommand, BaseResult<CloseMyAccountResult>>
 {
     public async Task<BaseResult<CloseMyAccountResult>> Handle(CloseMyAccountCommand request, CancellationToken cancellationToken)
     {
-        // 1) KÝM? ? token'dan
+        // 1) KÝM? -> token'dan
         if (_currentUser.UserId is null)
             return BaseResult<CloseMyAccountResult>.Fail("Kullanýcý bilgisi alýnamadý. Lütfen tekrar giriþ yapýn.");
 
@@ -59,11 +61,17 @@ public class CloseMyAccountCommandHandler(UserManager<AppUser> _userManager,
         if (!result.Succeeded)
             return BaseResult<CloseMyAccountResult>.Fail(result.Errors);
 
-        // 5) Ýçerikleri gizle (blog, yorum, alt yorum ? IsDeleted = 1)
+        // 5) Ýçerikleri gizle (blog, yorum, alt yorum -> IsDeleted = 1)
         await _accountContentService.HideContentAsync(user.Id, cancellationToken);
 
-        // 6) Bilgilendirme maili. Mail gönderilemese bile hesap kapatma iþlemi geçerli kalsýn.
         var deadline = now.AddDays(AccountRules.DeletionGraceDays);
+
+        // LOG: YENÝ
+        _logger.LogInformation("{EventType}: Hesap kapatma süreci baþladý. Kullanýcý: {TargetUserId}, Kapanýþ: {Deadline}",
+                               LogEvents.AccountClosed, user.Id, deadline);
+
+        // 6) Bilgilendirme maili. Mail gönderilemese bile hesap kapatma iþlemi geçerli kalsýn.
+        //    Gönderilemezse hata AccountEmailService içinde EmailFailed olarak loglanýr.
         try
         {
             await _accountEmailService.SendClosureScheduledAsync(user, deadline);

@@ -19,6 +19,7 @@ using ZenBlog.Infrastructure.Services.CurrentUser;
 using ZenBlog.Infrastructure.Services.EmailService;
 using ZenBlog.Infrastructure.Services.GoogleAuth;
 using ZenBlog.Infrastructure.Services.Jwt;
+using ZenBlog.Infrastructure.Services.Logging;
 using ZenBlog.Infrastructure.Services.Turnstile;
 
 namespace ZenBlog.Infrastructure.Extensions;
@@ -151,7 +152,14 @@ public static class ServiceRegistrations
         // AddHttpClient: TurnstileService'e hazır, doğru yönetilen bir HttpClient verir
         services.AddHttpClient<ITurnstileService, TurnstileService>();
 
-
+        // YENİ: Log sorguları (Elasticsearch). Adres Serilog'un kullandığı ayarın aynısı.
+        // AddHttpClient: HttpClient'ı doğru yönetir (bağlantı havuzu; her istekte yeni bağlantı açmaz).
+        services.AddHttpClient<ILogQueryService, ElasticLogQueryService>(client =>
+        {
+            var url = configuration["Elasticsearch:Url"] ?? "http://localhost:9200";
+            client.BaseAddress = new Uri(url.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(10);   // Elasticsearch yanıt vermezse sayfa sonsuza kadar beklemesin
+        });
 
         // YENİ: Arka plan görevi: hesap kapanmadan 3 gün önce hatırlatma maili
         services.AddHostedService<AccountDeletionReminderService>();

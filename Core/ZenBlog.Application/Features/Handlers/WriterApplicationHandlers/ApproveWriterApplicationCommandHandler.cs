@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;   // YENÝ
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
@@ -15,7 +16,8 @@ public class ApproveWriterApplicationCommandHandler(UserManager<AppUser> _userMa
                                                     IRepository<WriterApplication> _applicationRepository,
                                                     IRepository<RoleChangeLog> _roleLogRepository,
                                                     ICurrentUserService _currentUser,
-                                                    IAccountEmailService _accountEmailService)
+                                                    IAccountEmailService _accountEmailService,
+                                                    ILogger<ApproveWriterApplicationCommandHandler> _logger)   // YENÝ
     : IRequestHandler<ApproveWriterApplicationCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(ApproveWriterApplicationCommand request, CancellationToken cancellationToken)
@@ -65,13 +67,18 @@ public class ApproveWriterApplicationCommandHandler(UserManager<AppUser> _userMa
             });
         }
 
-        // 3) Damgayý yenile ? kiþinin oturumu düþer, yeniden girince yazar paneline gider.
-        //    UpdateSecurityStampAsync içinde SaveChanges var ? baþvuru ve rol geçmiþi de birlikte yazýlýr.
+        // 3) Damgayý yenile -> kiþinin oturumu düþer, yeniden girince yazar paneline gider.
+        //    UpdateSecurityStampAsync içinde SaveChanges var -> baþvuru ve rol geçmiþi de birlikte yazýlýr.
         var stampResult = await _userManager.UpdateSecurityStampAsync(user);
         if (!stampResult.Succeeded)
             return BaseResult<object>.Fail(stampResult.Errors);
 
+        // LOG: YENÝ
+        _logger.LogInformation("{EventType}: Yazarlýk baþvurusu onaylandý. Baþvuru: {ApplicationId}, Hedef: {TargetUserId}",
+                               LogEvents.WriterApplicationApproved, application.Id, user.Id);
+
         // 4) Tebrik maili
+        //    Gönderilemezse hata AccountEmailService içinde EmailFailed olarak loglanýr.
         try
         {
             await _accountEmailService.SendWriterApplicationApprovedAsync(user);

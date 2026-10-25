@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
@@ -16,12 +17,13 @@ public class BlockUserCommandHandler(UserManager<AppUser> _userManager,
                                      IAccountContentService _accountContentService,
                                      IAccountEmailService _accountEmailService,
                                      IFileService _fileService,
-                                     ICurrentUserService _currentUser)
+                                     ICurrentUserService _currentUser,
+                                     ILogger<BlockUserCommandHandler> _logger)   // DEÐÝÞTÝ: logu yazan sýnýf
     : IRequestHandler<BlockUserCommand, BaseResult<object>>
 {
     public async Task<BaseResult<object>> Handle(BlockUserCommand request, CancellationToken cancellationToken)
     {
-        // 1) Bloke eden admin ? token'dan
+        // 1) Bloke eden admin -> token'dan
         if (_currentUser.UserId is null)
             return BaseResult<object>.Fail("Kullanýcý bilgisi alýnamadý. Lütfen tekrar giriþ yapýn.");
 
@@ -50,10 +52,10 @@ public class BlockUserCommandHandler(UserManager<AppUser> _userManager,
 
         var now = DateTime.Now;
 
-        // 4) Bloke kaydý + kullanýcýnýn yeni durumu ? TEK SaveChanges ile
+        // 4) Bloke kaydý + kullanýcýnýn yeni durumu -> TEK SaveChanges ile
         //    CreateAsync kaydý sadece DbContext'e EKLER (henüz veritabanýna yazmaz).
         //    UserManager.UpdateAsync da ayný DbContext'i kullanýr ve sonunda SaveChanges çaðýrýr;
-        //    o anda bekleyen bloke kaydý da birlikte yazýlýr ? ya ikisi birden ya hiçbiri.
+        //    o anda bekleyen bloke kaydý da birlikte yazýlýr -> ya ikisi birden ya hiçbiri.
         await _blockRepository.CreateAsync(new UserBlock
         {
             UserId = user.Id,
@@ -78,7 +80,13 @@ public class BlockUserCommandHandler(UserManager<AppUser> _userManager,
         // 5) Ýçerikleri gizle (zaten gizliyse tekrar dokunmaz: !IsDeleted koþulu var)
         await _accountContentService.HideContentAsync(user.Id, cancellationToken);
 
+        // LOG: Gerekçe metnini loglamýyoruz (kiþisel bilgi içerebilir); o zaten UserBlock tablosunda.
+        // DEÐÝÞTÝ: alan adý {TargetUserId} (diðer olaylarla ayný ad -> "bu kiþinin bütün olaylarý" aramasý çalýþsýn)
+        _logger.LogWarning("{EventType}: Kullanýcý bloke edildi. Hedef: {TargetUserId}",
+                           LogEvents.UserBlocked, user.Id);
+
         // 6) Bilgilendirme maili (gönderilemese bile bloke geçerli)
+        //    Gönderilemezse hata AccountEmailService içinde EmailFailed olarak loglanýr.
         try
         {
             await _accountEmailService.SendBlockedAsync(user, request.Reason!.Trim());

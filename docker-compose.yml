@@ -1,0 +1,61 @@
+# =====================================================================
+# ZENBLOG GELİŞTİRME ORTAMI: Elasticsearch + Kibana (loglama)
+# =====================================================================
+services:
+
+  # ---------------------------------------------------------------
+  # ELASTICSEARCH: logları saklayan ve arayan motor
+  # ---------------------------------------------------------------
+  elasticsearch:
+    # Hangi imaj? Elastic'in resmi imajı, 8.15.3 sürümü
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+
+    # Docker Desktop'ta bu adla görünecek
+    container_name: zenblog-elasticsearch
+
+    # Kapsayıcının içine verilen ayarlar (ortam değişkenleri)
+    environment:
+      - discovery.type=single-node          # Tek sunucu (geliştirme için yeterli)
+      - xpack.security.enabled=false        # SADECE GELİŞTİRMEDE: şifre ve HTTPS kapalı
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g          # En fazla 1 GB bellek kullansın
+
+    # Bilgisayarımdaki 9200 → kapsayıcının 9200'ü
+    ports:
+      - "9200:9200"
+
+    # Loglar kapsayıcı silinse bile kaybolmasın: "es-data" adlı kalıcı disk
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+    # "Hazır mı?" kontrolü: 10 saniyede bir kendi adresine istek atar
+    # Kibana, Elasticsearch hazır olana kadar bunu bekleyecek
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # ---------------------------------------------------------------
+  # KIBANA: logları görmek için web arayüzü → http://localhost:5601
+  # ---------------------------------------------------------------
+  kibana:
+    # Elasticsearch ile AYNI sürüm olmak zorunda
+    image: docker.elastic.co/kibana/kibana:9.0.0
+    container_name: zenblog-kibana
+
+    environment:
+      # Kibana, Elasticsearch'e SERVİS ADIYLA ulaşıyor ("elasticsearch").
+      # docker-compose iki kapsayıcıyı aynı sanal ağa koyduğu için bu ad çalışır.
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+
+    ports:
+      - "5601:5601"
+
+    # Elasticsearch "sağlıklı" olmadan Kibana başlamasın
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+# Kalıcı disklerin tanımı
+volumes:
+  es-data:

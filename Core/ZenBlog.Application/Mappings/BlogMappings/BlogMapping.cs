@@ -28,7 +28,8 @@ namespace ZenBlog.Application.Mappings.BlogMappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CoverImage, opt => opt.Ignore())
                 .ForMember(dest => dest.BlogImage1, opt => opt.Ignore())
-                .ForMember(dest => dest.BlogImage2, opt => opt.Ignore());
+                .ForMember(dest => dest.BlogImage2, opt => opt.Ignore())
+                .ForMember(dest => dest.AppUserId, opt => opt.Ignore());
         }
     }
 }

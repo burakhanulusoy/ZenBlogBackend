@@ -1,12 +1,14 @@
 using System.Globalization;
 using System.Net;
+using Microsoft.Extensions.Logging;   // YENÝ
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
 using ZenBlog.Domain.Entities;
 
 namespace ZenBlog.Application.Services.MailServices;
 
-public class AccountEmailService(IEmailService _emailService) : IAccountEmailService
+public class AccountEmailService(IEmailService _emailService,
+                                 ILogger<AccountEmailService> _logger) : IAccountEmailService   // YENÝ
 {
     // Tarihler Türkçe yazýlsýn: "21 Kasým 2026"
     private static readonly CultureInfo Turkish = new("tr-TR");
@@ -29,7 +31,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             <p style="color:#8a5300;">Bu iþlemi sen yapmadýysan hemen giriþ yap ve þifreni deðiþtir.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Hesabýn kapatýlýyor", "Hesabýn kapatýlýyor", body);
+        return SendAsync(user, "ClosureScheduled", "ZenBlog - Hesabýn kapatýlýyor", "Hesabýn kapatýlýyor", body);
     }
 
     public Task SendClosureReminderAsync(AppUser user, DateTime deadline)
@@ -42,7 +44,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             <p>Bir þey yapmazsan hesabýn kapanacak ve bu e-posta adresiyle tekrar kayýt olunamayacak.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Hesabýnýn kapanmasýna 3 gün kaldý", "Son 3 gün", body);
+        return SendAsync(user, "ClosureReminder", "ZenBlog - Hesabýnýn kapanmasýna 3 gün kaldý", "Son 3 gün", body);
     }
 
     public Task SendBlockedAsync(AppUser user, string reason)
@@ -60,7 +62,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             <p>Bir yanlýþlýk olduðunu düþünüyorsan bizimle iletiþime geçebilirsin.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Hesabýn bloke edildi", "Hesabýn bloke edildi", body);
+        return SendAsync(user, "Blocked", "ZenBlog - Hesabýn bloke edildi", "Hesabýn bloke edildi", body);
     }
 
     public Task SendUnblockedAsync(AppUser user)
@@ -71,14 +73,15 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             <p>ZenBlog'a tekrar hoþ geldin.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Hesabýn tekrar açýldý", "Hesabýn tekrar açýldý", body);
+        return SendAsync(user, "Unblocked", "ZenBlog - Hesabýn tekrar açýldý", "Hesabýn tekrar açýldý", body);
     }
 
     // ---------------------------------------------------------------
     // ORTAK MAÝL ÇERÇEVESÝ: bütün mailler ayný görünsün
     // (Mail programlarý CSS dosyasý okumaz; stiller satýr içi yazýlýr)
+    // YENÝ: emailType -> logda hangi mailin gönderilemediði görünsün
     // ---------------------------------------------------------------
-    private Task SendAsync(AppUser user, string subject, string heading, string content)
+    private async Task SendAsync(AppUser user, string emailType, string subject, string heading, string content)
     {
         var html = $"""
             <div style="font-family:Arial,Helvetica,sans-serif;background:#f5f6f3;padding:24px;">
@@ -96,7 +99,21 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             </div>
             """;
 
-        return _emailService.SendEmailAsync(user.Email!, subject, html);
+        try
+        {
+            await _emailService.SendEmailAsync(user.Email!, subject, html);
+        }
+        catch (Exception ex)
+        {
+            // YENÝ: E-posta hatasý artýk SESSÝZCE YUTULMUYOR.
+            // Bütün mailler buradan geçtiði için tek yerde loglamak hepsini kapsar.
+            // E-posta adresini deðil, kullanýcýnýn Id'sini yazýyoruz (kiþisel veri).
+            _logger.LogError(ex, "{EventType}: E-posta gönderilemedi. Tür: {EmailType}, Alýcý: {TargetUserId}",
+                             LogEvents.EmailFailed, emailType, user.Id);
+
+            // Hatayý yukarý iletmeye devam: handler'lardaki "catch { }" bloðu iþlemin bozulmamasýný saðlýyor
+            throw;
+        }
     }
     // YENÝ: rol deðiþikliði maili
     public Task SendRolesChangedAsync(AppUser user, List<string> addedRoles, List<string> removedRoles)
@@ -121,7 +138,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             <p>Güvenliðin için açýk oturumlarýn kapatýldý. Yeni yetkilerinle devam etmek için tekrar giriþ yapman yeterli.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Rollerin güncellendi", "Rollerin güncellendi", body);
+        return SendAsync(user, "RolesChanged", "ZenBlog - Rollerin güncellendi", "Rollerin güncellendi", body);
     }
 
 
@@ -135,7 +152,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
                Baþvurunun durumunu panelindeki "Yazar ol" sayfasýndan da takip edebilirsin.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Yazarlýk baþvurun alýndý", "Baþvurun alýndý", body);
+        return SendAsync(user, "WriterApplicationReceived", "ZenBlog - Yazarlýk baþvurun alýndý", "Baþvurun alýndý", body);
     }
 
     public Task SendWriterApplicationApprovedAsync(AppUser user)
@@ -147,7 +164,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
             <p>Seni aramýzda görmekten mutluluk duyuyoruz.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Artýk yazarsýn!", "Baþvurun onaylandý", body);
+        return SendAsync(user, "WriterApplicationApproved", "ZenBlog - Artýk yazarsýn!", "Baþvurun onaylandý", body);
     }
 
     public Task SendWriterApplicationRejectedAsync(AppUser user, string reason, DateTime reapplyAt)
@@ -162,7 +179,7 @@ public class AccountEmailService(IEmailService _emailService) : IAccountEmailSer
                Bu süreyi okumak, yorum yapmak ve kendini geliþtirmek için deðerlendirebilirsin.</p>
             """;
 
-        return SendAsync(user, "ZenBlog - Yazarlýk baþvurun hakkýnda", "Baþvurun deðerlendirildi", body);
+        return SendAsync(user, "WriterApplicationRejected", "ZenBlog - Yazarlýk baþvurun hakkýnda", "Baþvurun deðerlendirildi", body);
     }
 
 

@@ -18,11 +18,11 @@ namespace ZenBlog.Application.Extensions
             {
                 options.RegisterServicesFromAssemblies(typeof(ApplicationAssembly).Assembly);
 
-
-                //behavior
+                // BEHAVIOR SIRASI = SOÐANIN KATMANLARI (ilk eklenen en DIÞTA)
+                // LoggingBehavior en dýþta: doðrulama + handler'ýn toplam süresini ölçsün
+                // ve doðrulama hatalarýný da görsün.
+                options.AddOpenBehavior(typeof(LoggingBehavior<,>));      // YENÝ
                 options.AddOpenBehavior(typeof(ValidationBehavior<,>));
-
-
             });
 
             //AutoMapper
