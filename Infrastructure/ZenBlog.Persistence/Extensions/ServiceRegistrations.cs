@@ -63,9 +63,11 @@ namespace ZenBlog.Persistence.Extensions
             services.AddScoped<IAccountContentService, AccountContentService>();   // YENÝ: hesap iþlemlerinde içerik gizle/aç
          
             services.AddScoped<IBlogReadService, BlogReadService>();   // YENÝ: kategori sayfasý, ilgili yazýlar
-          
-            
-            
+
+            services.AddScoped<IBlogViewService, BlogViewService>();   // YENÝ: okunma sayacý
+
+            services.AddScoped<IDashboardReadService, DashboardReadService>();   // YENÝ: dashboard istatistikleri
+
             return services;
         }
 

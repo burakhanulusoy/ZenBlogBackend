@@ -4,6 +4,7 @@ using ZenBlog.API.Endpoints.Category;
 using ZenBlog.API.Endpoints.Comment;
 using ZenBlog.API.Endpoints.Contact;
 using ZenBlog.API.Endpoints.ContactMessage;
+using ZenBlog.API.Endpoints.Dashboard;
 using ZenBlog.API.Endpoints.Home;
 using ZenBlog.API.Endpoints.Role;
 using ZenBlog.API.Endpoints.SocialMedia;
@@ -31,7 +32,8 @@ namespace ZenBlog.API.Registrations
             app.RegisterWriterApplicationEndpoints();
             app.RegisterSocialMediaEndpoint();
             app.RegisterTeamEndpoints();
-            app.RegisterHomeEndpoints();   
+            app.RegisterHomeEndpoints();
+            app.RegisterDashboardEndpoints();   
         }
 
 

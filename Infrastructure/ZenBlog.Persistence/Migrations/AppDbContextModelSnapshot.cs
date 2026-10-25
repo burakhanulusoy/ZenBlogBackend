@@ -224,6 +224,11 @@ namespace ZenBlog.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
                     b.Property<DateTime?>("DeletionReminderSentAt")
                         .HasColumnType("datetime2");
 
@@ -384,6 +389,9 @@ namespace ZenBlog.Persistence.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppUserId");
@@ -391,6 +399,36 @@ namespace ZenBlog.Persistence.Migrations
                     b.HasIndex("CategoryId");
 
                     b.ToTable("Blogs");
+                });
+
+            modelBuilder.Entity("ZenBlog.Domain.Entities.BlogView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BlogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("ViewDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("VisitorKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ViewDate");
+
+                    b.HasIndex("BlogId", "VisitorKey", "ViewDate")
+                        .IsUnique();
+
+                    b.ToTable("BlogViews");
                 });
 
             modelBuilder.Entity("ZenBlog.Domain.Entities.Category", b =>
@@ -903,6 +941,17 @@ namespace ZenBlog.Persistence.Migrations
                     b.Navigation("AppUser");
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("ZenBlog.Domain.Entities.BlogView", b =>
+                {
+                    b.HasOne("ZenBlog.Domain.Entities.Blog", "Blog")
+                        .WithMany()
+                        .HasForeignKey("BlogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Blog");
                 });
 
             modelBuilder.Entity("ZenBlog.Domain.Entities.Comment", b =>

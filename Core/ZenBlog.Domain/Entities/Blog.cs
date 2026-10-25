@@ -34,4 +34,9 @@ public class Blog:BaseEntity
     // Geri açarken SADECE bunlar geri gelir; kiþinin kendi sildiði bir blog geri dönmez.
     public bool HiddenByAccount { get; set; }
 
+
+    // YENÝ: Toplam okunma (günlük tekil). Listelerde hýzlý göstermek için toplam burada tutulur;
+    // gün gün ayrýntý BlogView tablosunda.
+    public int ViewCount { get; set; }
+
 }

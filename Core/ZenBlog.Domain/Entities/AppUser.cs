@@ -34,5 +34,9 @@ namespace ZenBlog.Domain.Entities
 
         // YENÝ: bu kullanýcýya uygulanan blokelerin geçmiþi
         public virtual IList<UserBlock> Blocks { get; set; }
+
+        // YENÝ: Üyelik tarihi (dashboard: yeni üyeler, son katýlanlar)
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
     }
 }

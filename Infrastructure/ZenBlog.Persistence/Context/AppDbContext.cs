@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+ï»¿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using ZenBlog.Domain.Entities;
@@ -12,10 +12,10 @@ namespace ZenBlog.Persistence.Context
         {
             base.OnModelCreating(modelBuilder);
 
-            // YENİ: UserBlock ? AppUser'a ÜÇ ayrı ilişki var (bloke edilen, bloke eden admin, kaldıran admin).
-            // EF hangisinin hangisi olduğunu kendisi çözemez; burada tek tek söylüyoruz.
-            // Restrict: kullanıcı satırı silinmeye kalkılırsa bloke geçmişi yüzünden engellensin
-            // (zaten kullanıcıları silmiyoruz; geçmiş hiç kaybolmasın diye güvence).
+            // YENÄ°: UserBlock ? AppUser'a ÃœÃ‡ ayrÄ± iliÅŸki var (bloke edilen, bloke eden admin, kaldÄ±ran admin).
+            // EF hangisinin hangisi olduÄŸunu kendisi Ã§Ã¶zemez; burada tek tek sÃ¶ylÃ¼yoruz.
+            // Restrict: kullanÄ±cÄ± satÄ±rÄ± silinmeye kalkÄ±lÄ±rsa bloke geÃ§miÅŸi yÃ¼zÃ¼nden engellensin
+            // (zaten kullanÄ±cÄ±larÄ± silmiyoruz; geÃ§miÅŸ hiÃ§ kaybolmasÄ±n diye gÃ¼vence).
             modelBuilder.Entity<UserBlock>(entity =>
             {
                 entity.HasOne(b => b.User)
@@ -38,7 +38,7 @@ namespace ZenBlog.Persistence.Context
                 entity.Property(b => b.UnblockReason).HasMaxLength(1000);
 
 
-                // YENİ: RoleChangeLog ? AppUser'a iki ilişki (rolü değişen, değiştiren admin)
+                // YENÄ°: RoleChangeLog ? AppUser'a iki iliÅŸki (rolÃ¼ deÄŸiÅŸen, deÄŸiÅŸtiren admin)
                 modelBuilder.Entity<RoleChangeLog>(entity =>
                 {
                     entity.HasOne(r => r.User)
@@ -54,7 +54,7 @@ namespace ZenBlog.Persistence.Context
                     entity.Property(r => r.RoleName).HasMaxLength(256).IsRequired();
                 });
 
-                // YENİ: WriterApplication ? AppUser'a iki ilişki (başvuran, karar veren admin)
+                // YENÄ°: WriterApplication ? AppUser'a iki iliÅŸki (baÅŸvuran, karar veren admin)
                 modelBuilder.Entity<WriterApplication>(entity =>
                 {
                     entity.HasOne(a => a.User)
@@ -75,6 +75,28 @@ namespace ZenBlog.Persistence.Context
                 });
 
 
+                // YENÄ°: Okunma kayÄ±tlarÄ±
+                modelBuilder.Entity<BlogView>(entity =>
+                {
+                    // AynÄ± ziyaretÃ§i aynÄ± blogu aynÄ± gÃ¼n bir kez sayÄ±lÄ±r (veritabanÄ± garantisi)
+                    entity.HasIndex(v => new { v.BlogId, v.VisitorKey, v.ViewDate }).IsUnique();
+
+                    // Grafikler tarihe gÃ¶re gruplayacak â†’ tarih Ã¼zerinde index
+                    entity.HasIndex(v => v.ViewDate);
+
+                    entity.Property(v => v.VisitorKey).HasMaxLength(64).IsRequired();
+
+                    entity.HasOne(v => v.Blog)
+                          .WithMany()
+                          .HasForeignKey(v => v.BlogId)
+                          .OnDelete(DeleteBehavior.Cascade);
+                });
+
+                // YENÄ°: Mevcut kullanÄ±cÄ±lara migration anÄ±nÄ±n tarihi yazÄ±lsÄ±n (0001-01-01 kalmasÄ±n)
+                modelBuilder.Entity<AppUser>()
+                            .Property(u => u.CreatedAt)
+                            .HasDefaultValueSql("GETDATE()");
+
 
             });
 
@@ -82,8 +104,8 @@ namespace ZenBlog.Persistence.Context
             {
                 if (typeof(BaseEntity).IsAssignableFrom(entitiyType.ClrType))
                 {
-                    //wrapper yapıyoruz, yani sorgulara otomatik olarak silinmiş olanları getirme filtresi ekliyoruz
-                    //select * from table where IsDeleted = false olanlar gelsin sadece diyeceğiz
+                    //wrapper yapÄ±yoruz, yani sorgulara otomatik olarak silinmiÅŸ olanlarÄ± getirme filtresi ekliyoruz
+                    //select * from table where IsDeleted = false olanlar gelsin sadece diyeceÄŸiz
                     modelBuilder.Entity(entitiyType.ClrType)
                                 .HasQueryFilter(ConvertToDeleteFilter(entitiyType.ClrType));
                 }
@@ -96,7 +118,7 @@ namespace ZenBlog.Persistence.Context
             var property = Expression.Property(Expression.Convert(parameter, typeof(BaseEntity)), "IsDeleted");
             var notDeleted = Expression.Not(property);
             return Expression.Lambda(notDeleted, parameter);
-            //ısdeleted false olanalr gelcek soft delete için
+            //Ä±sdeleted false olanalr gelcek soft delete iÃ§in
         }
 
         public DbSet<About> Abouts { get; set; }
@@ -110,8 +132,8 @@ namespace ZenBlog.Persistence.Context
         public DbSet<SubComment> SubComments { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
-        public DbSet<RoleChangeLog> RoleChangeLogs { get; set; }   
-
+        public DbSet<RoleChangeLog> RoleChangeLogs { get; set; }
+        public DbSet<BlogView> BlogViews { get; set; }   
         public DbSet<WriterApplication> WriterApplications { get; set; }   
     }
 }

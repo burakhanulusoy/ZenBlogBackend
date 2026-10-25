@@ -1,5 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using System.Text;
 using ZenBlog.Application.Base;
 using ZenBlog.Application.Constants;
 using ZenBlog.Application.Contracts.Infrastructure;
@@ -134,6 +136,37 @@ namespace ZenBlog.API.Endpoints.Blog
             .AllowAnonymous()
             .Produces<BaseResult<List<HomeBlogResult>>>(StatusCodes.Status200OK);
 
+            // YENİ: POST /api/blogs/{id}/view → okunmayı say (günlük tekil, herkese açık)
+            // Ziyaretçi kimliği: giriş yapmışsa kullanıcı Id'si, değilse IP + tarayıcı bilgisi.
+            // İkisi de OLDUĞU GİBİ saklanmaz; SHA-256 ile özetlenir (geri çevrilemez).
+            blogs.MapPost("{id:guid}/view", async (Guid id, HttpContext http, IMediator mediator, ICurrentUserService currentUser) =>
+            {
+                var userAgent = http.Request.Headers.UserAgent.ToString();
+
+                // Arama motoru botları sayılmasın
+                if (IsBot(userAgent))
+                    return Results.NoContent();
+
+                var rawKey = currentUser.UserId is Guid userId
+                    ? $"user:{userId}"
+                    : $"anon:{http.Connection.RemoteIpAddress}|{userAgent}";
+
+                var visitorKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawKey)));
+
+                await mediator.Send(new RecordBlogViewCommand(id, visitorKey));
+                return Results.NoContent();   // 204: cevap gövdesi yok, sadece "tamam"
+            })
+            .AllowAnonymous()
+            .Produces(StatusCodes.Status204NoContent);
+
         }
+
+
+        // Basit bot kontrolü: bilinen tarayıcı-dışı istemciler
+        private static bool IsBot(string userAgent) =>
+            string.IsNullOrWhiteSpace(userAgent) ||
+            new[] { "bot", "crawler", "spider", "slurp", "facebookexternalhit", "preview" }
+                .Any(word => userAgent.Contains(word, StringComparison.OrdinalIgnoreCase));
+
     }
 }
