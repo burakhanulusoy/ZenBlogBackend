@@ -9,7 +9,10 @@ using ZenBlog.Application.Features.Results.AboutResults;
 namespace ZenBlog.API.Endpoints.About;
 
 public static class AboutEndpoints
-{
+{  
+
+
+
     public static void RegisterAboutEndpoints(this IEndpointRouteBuilder app)
     {
         var abouts = app.MapGroup("/abouts").WithTags("Abouts");
