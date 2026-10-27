@@ -40,16 +40,20 @@
 
 **ZenBlog**, okurların yazıları okuyup yorum yaptığı, yazarların içerik ürettiği ve yöneticilerin bütün sistemi denetlediği çok rollü bir blog platformudur. Backend **.NET 9 Minimal API** ile Clean Architecture prensiplerine göre; frontend **Angular 20 + PrimeNG** ile bir ziyaretçi sitesi ve üç ayrı panel olarak geliştirilmiştir. Görseller **Azure Blob Storage**'da saklanır, loglar **Elasticsearch**'e akar.
 
-## ⚡ Bir Bakışta
+## ⚡ Teknik Öne Çıkanlar
 
-- 🔒 **Rolü değişen ya da bloke edilen kullanıcının oturumu anında düşer:** JWT içindeki SecurityStamp her istekte kontrol edilir.
-- ♻️ **30 günlük, geri alınabilir hesap kapatma:** içerikler gizlenir, süre dolmadan giriş yapan kullanıcının her şeyi geri gelir.
-- 🚫 **Kanıtlı bloke sistemi:** gerekçe ve kanıt dosyası zorunlu, bütün geçmiş kayıt altında.
-- ✍️ **Yazarlık başvurusu:** taahhütnameli form, yönetici değerlendirmesi, onayda otomatik rol.
-- 🛡️ **Rate limiting, Cloudflare Turnstile ve hesap kilitleme** ile kötüye kullanıma karşı koruma.
-- ☁️ **Azure Blob Storage** ile dosya yönetimi ve uzun süreli tarayıcı önbelleği.
-- 📊 **Dönem karşılaştırmalı dashboard'lar** ve günlük tekil **okunma sayacı**.
-- 🔭 **Serilog + Elasticsearch + Kibana** ve yönetim panelinde **Query DSL ile çalışan log ekranı**.
+- **.NET 9 Minimal API:** `MapGroup` ile modüler uç noktalar; `/api` grubunda `RequireAuthorization()` ile **güvenli varsayılan**, açık uçlar `AllowAnonymous()` ile.
+- **Clean Architecture + CQRS:** Domain · Application · Persistence · Infrastructure · API katmanları; **MediatR** ile komut ve sorgu ayrımı.
+- **Pipeline Behavior'lar:** `LoggingBehavior` → `ValidationBehavior` (**FluentValidation**) → Handler; doğrulama ve loglama tek merkezde.
+- **JWT + SecurityStamp:** HS256 imzalı token; `OnTokenValidated` ile her istekte hesap durumu ve damga kontrolü. Rol ya da hesap durumu değişince oturum **anında** düşer.
+- **ASP.NET Core Identity:** Guid anahtarlar, hesap kilitleme, 6 haneli e-posta doğrulama ve şifre sıfırlama kodları, Google ile giriş.
+- **Rate Limiting:** IP başına sabit pencere (fixed window) politikaları; giriş, doğrulama kodu ve iletişim formu için ayrı limitler.
+- **Cloudflare Turnstile:** `IEndpointFilter` ile bot doğrulaması; geçersiz istek handler'a ulaşmaz.
+- **Azure Blob Storage:** `IFileService` soyutlaması; `Cache-Control: immutable` ile uzun süreli tarayıcı önbelleği.
+- **EF Core + SQL Server:** Generic Repository, Unit of Work, `AuditDbContextInterceptor` ile soft delete; yoğun ekranlarda **projeksiyonla** N+1'siz okuma servisleri.
+- **Serilog + Elasticsearch + Kibana:** ECS formatında yapılandırılmış loglar, `EventType` ile denetim olayları, `trace.id` ile istek takibi; admin panelinde **Query DSL** ve aggregation'larla çalışan log ekranı.
+- **BackgroundService:** Hesap kapatma sürecinde zamanlanmış hatırlatma mailleri (MailKit).
+- **Docker Compose:** Elasticsearch ve Kibana için tek komutla geliştirme ortamı.
 
 ---
 
