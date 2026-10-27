@@ -29,9 +29,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/KULLANICI_ADIN/ZenBlogBackend"><b>⚙️ Backend (bu depo)</b></a>
+  <a href="https://github.com/burakhanulusoy/ZenBlogBackend"><b>⚙️ Backend (bu depo)</b></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/KULLANICI_ADIN/ZenBlogFrontend"><b>🎨 Frontend deposu</b></a>
+  <a href="https://github.com/burakhanulusoy/ZenBlogFrontend"><b>🎨 Frontend deposu</b></a>
 </p>
 
 </div>
